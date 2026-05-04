@@ -1,0 +1,19 @@
+# Ignora i Dataset (non caricare mai i dati dei pazienti!)
+*.csv
+*.tsv
+*.xlsx
+
+# Ignora le immagini generate (puoi sempre ricrearle col codice)
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# Ignora le cartelle di cache di Python
+__pycache__/
+.ipynb_checkpoints/
+
+# Ignora file di ambiente virtuale (se presenti nella cartella)
+env/
+venv/
+miniconda3/
