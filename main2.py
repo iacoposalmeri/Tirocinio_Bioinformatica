@@ -60,7 +60,7 @@ ax.step(range(1, len(cumulativa_var) + 1), cumulativa_var,
 ax.set_ylabel('Varianza Spiegata (%)', fontsize=12)
 ax.set_xlabel('Indice della Componente Principale (PC)', fontsize=12)
 ax.set_title('Scree Plot: Ricerca del Gomito (Elbow Method)', fontsize=14, fontweight='bold')
-ax.set_xticks(np.arange(0, 51, step=5)) # Mostra una tacca ogni 5 componenti
+ax.set_xticks(np.arange(0, 51, step=5)) 
 ax.legend(loc='center right')
 ax.grid(True, linestyle='--', alpha=0.5)
 

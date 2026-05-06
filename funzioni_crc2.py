@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 
 
-def caricamento_pulizia_dati(file_metadati, file_abbondanze):
+def caricamento_pulizia_dati(file_metadati, file_abbondanze, condizione_negativa='control'):
     '''output:x, y_binary, metadati_finali_no_disease, metadati_esclusi'''
     # Caricamento dei dati
     metadati = pd.read_csv(file_metadati, index_col=0)
@@ -42,8 +42,18 @@ def caricamento_pulizia_dati(file_metadati, file_abbondanze):
     y = metadati_finali["study_condition"]
     x = abbondanze
 
-    # Convertiamo le etichette in valori binari (CRC = 1, control = 0)
-    y_binary = y.map({"CRC": 1, "control": 0})
+    if condizione_negativa == "control":
+        y = metadati_finali["study_condition"]
+        y_binary = y.map({"CRC": 1, "control": 0})
+        
+    elif condizione_negativa == "healthy":
+        y = metadati_finali["disease"]
+        y_binary = y.map({"CRC": 1, "healthy": 0})
+        
+    else:
+        raise ValueError("Scenario non valido. Scegli 'control' o 'healthy'.")
+
+    y_binary = y_binary.dropna()
 
     # Allineiamo x e y_binary per assicurarci che abbiano gli stessi campioni (righe)
     x, y_binary = x.align(y_binary, join="inner", axis=0)
