@@ -1,27 +1,23 @@
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn import svm
-from xgboost import XGBClassifier
-from funzioni_crc2 import *
+from utils_crc import *
 from sklearn.decomposition import PCA
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.metrics import silhouette_score, confusion_matrix, ConfusionMatrixDisplay, RocCurveDisplay, matthews_corrcoef
+from sklearn.metrics import silhouette_score, ConfusionMatrixDisplay, RocCurveDisplay, matthews_corrcoef
 import pandas as pd
 
-cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
-
-x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv") #, 'Control')
-
+# aggiungere il parametro <<condizione_negativa = 'healthy'>> per il confronto fra pazienti malati di CRC e persone completamente sane
+x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv")
 
 
 X_train, X_test, y_train, y_test = train_test_split(x, y_binary, test_size=0.2, random_state=42, stratify=y_binary)
 
 
-#TRYING TO FIND THE ELBOW -- PCA
+# CALCOLO PREVALENZA E TRASFORMAZIONE CLR
 
 batteri_da_tenere = maschera_prevalenza(X_train, y_train, 0.05)
 
@@ -42,7 +38,7 @@ X_train_pca_elb = pca_elb.fit_transform(X_train_scaled_elb,y_train)
 X_test_pca_elb = pca_elb.transform(X_test_scaled_elb)
 
 
-#ELBOW GRAPH -- PCA
+# PCA E RICERCA DEL GOMITO
 
 fig_elb, ax_elb = plt.subplots(figsize=(18,10))
 
@@ -152,38 +148,3 @@ fig_r.savefig("ROC_Curve_Vincitore.png", dpi=300, bbox_inches='tight')
 #MCC
 print(f"Il Coefficiente di Correlazione di Matthews (MCC) e': {matthews_corrcoef(y_test,y_pred_cm):.6f}")
 
-""" for cutoff in cutoffs:
-
-    batteri_da_tenere = maschera_prevalenza(X_train, y_train, cutoff)
-
-    print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train.shape}")
-    X_train_filtrato = filtraggio(X_train, batteri_da_tenere)
-    X_test_filtrato = filtraggio(X_test, batteri_da_tenere)
-    print(f"Dopo il filtraggio al {cutoff*100:.0f}%: {X_train_filtrato.shape}")
-    X_train_clr = trasformazione_clr(X_train_filtrato)
-    X_test_clr = trasformazione_clr(X_test_filtrato)
-    
-    
-
-    X_train_scaled, X_test_scaled = standard_scaler(X_train_clr, X_test_clr)
-
-    #BLOCCO PCA
-    pca = PCA(n_components=15,random_state=42)
-
-    X_train_pca = pca.fit_transform(X_train_scaled,y_train)
-    X_test_pca = pca.transform(X_test_scaled)
-
-    varianza_totale = pca.explained_variance_ratio_.sum() * 100
-    print(f"La PCA ha compresso i dati in {pca.n_components_} dimensioni salvando il {varianza_totale:.1f}% dell'informazione.")
-
-    print(f"Random Forest {cutoff*100:.0f}%:")
-    RF = RandomForestClassifier(random_state=42, n_jobs=-1)
-    report_cv_rf = crossvalidation(RF, X_train_pca, y_train, 10, "f1_macro")
-
-    print(f"XGB {cutoff*100:.0f}%:")
-    XGB = XGBClassifier(n_jobs=-1)
-    report_cv_xgb = crossvalidation(XGB, X_train_pca, y_train, 10, "f1_macro")
-
-    print(f"SVM {cutoff*100:.0f}%:")
-    SVM = svm.SVC(kernel="rbf", random_state=42)
-    report_cv_svm = crossvalidation(SVM, X_train_pca, y_train, 10, "f1_macro") """

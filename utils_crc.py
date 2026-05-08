@@ -10,7 +10,7 @@ from sklearn.model_selection import cross_val_score
 
 
 def caricamento_pulizia_dati(file_metadati, file_abbondanze, condizione_negativa='control'):
-    '''output:x, y_binary, metadati_finali_no_disease, metadati_esclusi'''
+    """ output:x, y_binary, metadati_finali_no_disease, metadati_esclusi """
     # Caricamento dei dati
     metadati = pd.read_csv(file_metadati, index_col=0)
     abbondanze = pd.read_csv(file_abbondanze, index_col=0)
@@ -33,12 +33,7 @@ def caricamento_pulizia_dati(file_metadati, file_abbondanze, condizione_negativa
     # Creiamo un nuovo DataFrame con solo i metadati finali da utilizzare per l'analisi
     metadati_finali = metadati_utilizzabili.drop(columns=metadati_da_rimuovere)
 
-    # Creiamo un nuovo DataFrame che contiene solo i campioni con condizioni di studio "CRC" o "healthy"
-    #metadati_finali_no_disease = metadati_finali[metadati_finali["disease"].isin([
-    #                                                                             "CRC", "healthy"])]
-
     # Preparazione dei dati per la classificazione
-    #y = metadati_finali_no_disease["study_condition"]
     y = metadati_finali["study_condition"]
     x = abbondanze
 
@@ -57,7 +52,6 @@ def caricamento_pulizia_dati(file_metadati, file_abbondanze, condizione_negativa
 
     # Allineiamo x e y_binary per assicurarci che abbiano gli stessi campioni (righe)
     x, y_binary = x.align(y_binary, join="inner", axis=0)
-    #return x, y_binary, metadati_finali_no_disease, metadati_esclusi
     return x, y_binary, metadati_finali, metadati_esclusi
 
 def filtro_relative(x):
@@ -84,7 +78,7 @@ def filtro_artefatti(x):
     return x_clean
 
 def maschera_prevalenza(X_train, y_train, cutoff):
-    '''output: batteri_da_tenere'''
+    """ output: batteri_da_tenere """
     # Analizziamo la prevalenza delle specie nei campioni sani e CRC
     X_train_sani = X_train[y_train == 0]
     X_train_crc = X_train[y_train == 1]
@@ -100,7 +94,7 @@ def maschera_prevalenza(X_train, y_train, cutoff):
 
 
 def trasformazione_clr(X):
-    '''output: X_filtrato'''
+    """output: X_filtrato"""
     # Applichiamo la trasformazione CLR ai dati filtrati
     # La funzione multi_replace sostituisce i valori zero con un piccolo valore positivo per evitare problemi con la trasformazione CLR
     X_nozeri = multi_replace(X)
@@ -116,7 +110,7 @@ def filtraggio(X_clr, batteri_da_tenere):
 
 
 def applica_algoritmo(modello, X_train, X_test, y_train, y_test, nome_test):
-    '''output: report, matrice di confusione'''
+    """ output: report, matrice di confusione """
     modello.fit(X_train, y_train)
     y_pred = modello.predict(X_test)
     # Genera il report come dizionario
@@ -129,7 +123,7 @@ def applica_algoritmo(modello, X_train, X_test, y_train, y_test, nome_test):
 
 
 def standard_scaler(train, test):
-    '''output: train_scaled, test_scaled'''
+    """ output: train_scaled, test_scaled """
     scaler = StandardScaler()
     train_scaled = pd.DataFrame(
         scaler.fit_transform(train),
