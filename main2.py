@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from xgboost import XGBClassifier
-from funzioni_crc import maschera_prevalenza, caricamento_pulizia_dati, filtraggio, trasformazione_clr, standard_scaler, crossvalidation
+from funzioni_crc import maschera_prevalenza, caricamento_pulizia_dati, filtraggio, trasformazione_rclr_gemelli, standard_scaler, crossvalidation
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
 cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
 k_skb = [150, 100, 50, 20, 10]
@@ -18,11 +18,11 @@ for cutoff in cutoffs:
 
         batteri_da_tenere = maschera_prevalenza(X_train, y_train, cutoff)
 
-        X_train_clr = trasformazione_clr(X_train)
-        X_test_clr = trasformazione_clr(X_test)
-        print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train_clr.shape}")
-        X_train_filtrato = filtraggio(X_train_clr, batteri_da_tenere)
-        X_test_filtrato = filtraggio(X_test_clr, batteri_da_tenere)
+        X_train_rclr = trasformazione_rclr_gemelli(X_train)
+        X_test_rclr = trasformazione_rclr_gemelli(X_test)
+        print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train_rclr.shape}")
+        X_train_filtrato = filtraggio(X_train_rclr, batteri_da_tenere)
+        X_test_filtrato = filtraggio(X_test_rclr, batteri_da_tenere)
         SKB = SelectKBest(mutual_info_classif, k=ks)
         print(f"Dopo il filtraggio al {cutoff*100:.0f}%: {X_train_filtrato.shape}")
         colonne_filtrate = X_train_filtrato.columns

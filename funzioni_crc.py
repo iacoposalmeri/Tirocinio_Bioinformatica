@@ -7,6 +7,8 @@ from sklearn import svm
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
+from gemelli.preprocessing import matrix_rclr, rpca
+from gemelli.rpca import rpca
 
 
 def caricamento_pulizia_dati(file_metadati, file_abbondanze):
@@ -65,6 +67,30 @@ def filtro_relative(x):
 
 
 
+
+def trasformazione_rclr_gemelli(X):
+    '''
+    Applica la Robust CLR usando gemelli. 
+    Questa trasformazione lavora riga per riga (campione per campione).
+    '''
+    # matrix_rclr accetta array NumPy (o tabelle BIOM), quindi passiamo X.values
+    # Restituisce un array NumPy con i valori trasformati
+    X_rclr_array = matrix_rclr(X.values)
+    
+    # Ricostruiamo il DataFrame mantenendo indici e nomi dei batteri
+    X_rclr = pd.DataFrame(X_rclr_array, index=X.index, columns=X.columns)
+    
+    return X_rclr
+
+def riduzione_rpca_gemelli(X_train, X_test, n_components=5):
+    # Passiamo direttamente i DataFrame
+    ordination_train, _ = rpca(X_train, n_components=n_components)
+    ordination_test, _ = rpca(X_test, n_components=n_components)
+    
+    X_train_rpca = ordination_train.samples
+    X_test_rpca = ordination_test.samples
+    
+    return X_train_rpca, X_test_rpca
 
 def filtro_artefatti(x):
     prevalenza_tot = (x > 0).mean(axis=0)
