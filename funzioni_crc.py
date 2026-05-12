@@ -7,9 +7,70 @@ from sklearn import svm
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
-from gemelli.preprocessing import matrix_rclr, rpca
-from gemelli.rpca import rpca
+#from gemelli.preprocessing import matrix_rclr, rpca
+#from gemelli.rpca import rpca
+from sklearn.decomposition import PCA
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
 
+def pca_classica(X_train, X_test, n_components):
+    pca = PCA(n_components=n_components)
+    X_train_pca = pca.fit_transform(X_train)
+    X_test_pca = pca.transform(X_test)
+   
+    return X_train_pca, X_test_pca, pca
+    
+def pca_grafico(pca):
+    PC_values = np.arange(pca.n_components_) + 1
+    plt.plot(PC_values, pca.explained_variance_ratio_, 'o-', linewidth=2, color='blue')
+    plt.title('Scree Plot')
+    plt.xlabel('Principal Component')
+    plt.ylabel('Variance Explained')
+    plt.show()
+def pca_grafico2(pca_modello, cutoff, varianza):
+    '''
+    Genera e salva lo Scree Plot mostrando varianza singola, cumulata 
+    e le linee di soglia per numero di componenti e target.
+    '''
+    # 1. Numero di componenti estratte
+    numero_reale_componenti = len(pca_modello.explained_variance_ratio_)
+    PC_values = np.arange(numero_reale_componenti) + 1
+    
+    # 2. Calcolo Varianza Singola e Cumulata (in percentuale)
+    varianza_singola = pca_modello.explained_variance_ratio_ * 100
+    varianza_cumulata = np.cumsum(varianza_singola)
+    
+    # Inizializza la figura (un po' più larga per far spazio alla legenda)
+    plt.figure(figsize=(10, 6))
+    
+    # 3. Disegna le barre per la singola e la linea per la cumulata
+    plt.bar(PC_values, varianza_singola, alpha=0.5, color='royalblue', label='Varianza Singola')
+    plt.plot(PC_values, varianza_cumulata, 'o-', linewidth=2, color='darkorange', label='Varianza Cumulata')
+    
+    # 4. Aggiungi il "mirino" (Soglia Varianza e Numero Componenti)
+    target_perc = varianza * 100
+    plt.axhline(y=target_perc, color='red', linestyle='--', alpha=0.8, 
+                label=f'Target Varianza ({target_perc:.0f}%)')
+    
+    plt.axvline(x=numero_reale_componenti, color='green', linestyle='--', alpha=0.8, 
+                label=f'N. Componenti Usate ({numero_reale_componenti})')
+    
+    # 5. Estetica e descrizioni
+    plt.title(f'Scree Plot (Cutoff Prevalenza: {cutoff*100:.0f}%)')
+    plt.xlabel('Numero della Componente Principale (PC)')
+    plt.ylabel('Varianza Spiegata (%)')
+    
+    # Mostra la legenda con tutti i dettagli
+    plt.legend(loc='lower right')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    
+    # 6. Salvataggio
+    nome_file = f"ScreePlot_Cut_0{str(cutoff).split('.')[1]}_Var_{varianza}.png"
+    plt.savefig(nome_file, dpi=300)
+    plt.close()
+    
 
 def caricamento_pulizia_dati(file_metadati, file_abbondanze):
     '''output:x, y_binary, metadati_finali_no_disease, metadati_esclusi'''
