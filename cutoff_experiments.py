@@ -34,7 +34,7 @@ for i, cutoff in enumerate(cutoffs):
 
 
     #BLOCCO PCA
-    pca = PCA(n_components=15,random_state=42)
+    pca = PCA(n_components=100,random_state=42)
 
     X_train_pca = pca.fit_transform(X_train_scaled,y_train)
     X_test_pca = pca.transform(X_test_scaled)
@@ -84,19 +84,27 @@ for i,cutoff in enumerate(cutoffs):
 
     batteri_da_tenere = maschera_prevalenza(X_train, y_train, cutoff)
 
-    print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train.shape}")
+    """ print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train.shape}")
     X_train_filtrato = filtraggio(X_train, batteri_da_tenere)
     X_test_filtrato = filtraggio(X_test, batteri_da_tenere)
     print(f"Dopo il filtraggio al {cutoff*100:.0f}%: {X_train_filtrato.shape}")
     X_train_clr = trasformazione_clr(X_train_filtrato)
-    X_test_clr = trasformazione_clr(X_test_filtrato)
+    X_test_clr = trasformazione_clr(X_test_filtrato) 
     
-    
+    X_train_scaled, X_test_scaled = standard_scaler(X_train_clr, X_test_clr)"""
 
-    X_train_scaled, X_test_scaled = standard_scaler(X_train_clr, X_test_clr)
+    X_train_clr = trasformazione_clr(X_train)
+    X_test_clr = trasformazione_clr(X_test)
+    
+    X_train_filtrato = filtraggio(X_train_clr, batteri_da_tenere)
+    X_test_filtrato = filtraggio(X_test_clr, batteri_da_tenere)
+
+    X_train_scaled, X_test_scaled = standard_scaler(X_train_filtrato, X_test_filtrato)
+
+    
 
     #BLOCCO PCA
-    pca = PCA(n_components=15,random_state=42)
+    pca = PCA(n_components=100,random_state=42)
 
     X_train_pca = pca.fit_transform(X_train_scaled,y_train)
     X_test_pca = pca.transform(X_test_scaled)
