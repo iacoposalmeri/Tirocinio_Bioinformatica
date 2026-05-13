@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # ==========================================
 # PANNELLO DI CONTROLLO (MODULARE)
 # ==========================================
-tipo_riduzione = "SKB"  # Cambia in "SKB" o "PCA"
+tipo_riduzione = "PCA"  # Cambia in "SKB" o "PCA"
 
 if tipo_riduzione == "PCA":
     file_input = 'risultati_crossvalidation_pca.csv'
@@ -13,7 +13,7 @@ if tipo_riduzione == "PCA":
     label_x = 'Varianza Spiegata (PCA)'
     suffisso_salvataggio = 'pca'
 else:
-    file_input = 'risultati_crossvalidation_skb.csv'
+    file_input = 'risultati_crossvalidation_skb_test2.csv'
     colonna_x = 'k_skb'
     label_x = 'Numero di feature (k_skb)'
     suffisso_salvataggio = 'skb'
