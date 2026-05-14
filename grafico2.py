@@ -13,7 +13,7 @@ if tipo_riduzione == "PCA":
     label_x = 'Varianza Spiegata (PCA)'
     suffisso_salvataggio = 'pca'
 else:
-    file_input = 'risultati_crossvalidation_skb_test2.csv'
+    file_input = 'risultati_crossvalidation_skb.csv'
     colonna_x = 'k_skb'
     label_x = 'Numero di feature (k_skb)'
     suffisso_salvataggio = 'skb'
