@@ -45,7 +45,7 @@ param_grid = {
     'kernel': ['rbf']
 }
 
-SVM_base = svm.SVC(class_weight = "balanced", random_state=42)
+SVM_base = svm.SVC(class_weight = "balanced",random_state=42)
 
 # Configurazione della ricerca (cv=10 fold, ottimizzazione per f1_macro)
 grid_search = GridSearchCV(
