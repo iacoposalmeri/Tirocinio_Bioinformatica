@@ -8,7 +8,6 @@ from funzioni_crc import maschera_prevalenza, caricamento_pulizia_dati, filtragg
 # 1. SETUP DELLA PIPELINE VINCITRICE
 # ==========================================
 cutoff = 0.05
-varianza_pca = 0.95 
 
 print("Caricamento dati...")
 x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv")
@@ -29,12 +28,6 @@ print(f"Dopo il filtraggio al {cutoff*100:.0f}%: {X_train_filtrato.shape}")
 # Scaling 
 X_train_scaled, X_test_scaled = standard_scaler(X_train_filtrato, X_test_filtrato)
 
-# PCA di Aitchison
-print(f"Esecuzione PCA ({varianza_pca*100:.0f}% varianza)...")
-X_train_pca, X_test_pca, pca_fitted = pca_classica(X_train_scaled, X_test_scaled, n_components=varianza_pca)
-num_componenti = pca_fitted.n_components_
-print(f"La PCA ha estratto {num_componenti} componenti principali.")
-
 # ==========================================
 # 2. IMPOSTAZIONE GRID SEARCH CV
 # ==========================================
@@ -45,7 +38,7 @@ param_grid = {
     'kernel': ['rbf']
 }
 
-SVM_base = svm.SVC(class_weight = "balanced", random_state=42)
+SVM_base = svm.SVC(random_state=42)
 
 # Configurazione della ricerca (cv=10 fold, ottimizzazione per f1_macro)
 grid_search = GridSearchCV(
@@ -61,7 +54,7 @@ grid_search = GridSearchCV(
 # 3. ESECUZIONE E RISULTATI
 # ==========================================
 print("\nInizio Grid Search su SVM. Questo processo potrebbe richiedere alcuni minuti...")
-grid_search.fit(X_train_pca, y_train)
+grid_search.fit(X_train_scaled, y_train)
 
 # --- STAMPE FONDAMENTALI AGGIUNTE ---
 print("\n" + "="*50)
@@ -75,7 +68,7 @@ print(f"Miglior F1-Macro Medio: {grid_search.best_score_:.4f}")
 miglior_modello = grid_search.best_estimator_
 
 # Valutazione finale sul TEST SET (dati mai visti prima)
-y_pred_test = miglior_modello.predict(X_test_pca)
+y_pred_test = miglior_modello.predict(X_test_scaled)
 
 print("\n" + "="*50)
 print("📊 PERFORMANCE FINALE SUL TEST SET (Dati Invisibili)")

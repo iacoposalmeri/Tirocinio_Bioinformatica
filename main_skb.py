@@ -6,7 +6,7 @@ from xgboost import XGBClassifier
 from funzioni_crc import maschera_prevalenza, caricamento_pulizia_dati, filtraggio, trasformazione_clr, standard_scaler, crossvalidation
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
 cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
-k_skb = [50, 100, 150]
+k_skb = [150, 200, 250]
 
 x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv")
 

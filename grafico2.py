@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # ==========================================
 # PANNELLO DI CONTROLLO (MODULARE)
 # ==========================================
-tipo_riduzione = "PCA"  # Cambia in "SKB" o "PCA"
+tipo_riduzione = "SKB"  # Cambia in "SKB" o "PCA"
 
 if tipo_riduzione == "PCA":
     file_input = 'risultati_crossvalidation_pca.csv'
@@ -224,6 +224,10 @@ plt.savefig(f'confronto_modelli_ds_cutoff_{suffisso_salvataggio}.png', bbox_inch
 plt.show()
 
 
+
+
+
+
 # ==========================================
 # PARTE 4: HEATMAP (MAPPE DI CALORE)
 # ==========================================
@@ -231,6 +235,10 @@ modelli = ['Random Forest', 'XGB', 'SVM']
 
 # --- HEATMAP MEDIA F1 MACRO ---
 fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+
+# 1. Calcoliamo il Min e il Max GLOBALI per la Media F1
+vmin_media = df_modelli['Media_f1_macro'].min()
+vmax_media = df_modelli['Media_f1_macro'].max()
 
 for i, modello in enumerate(modelli):
     df_temp = df_modelli[df_modelli['Modello'] == modello]
@@ -244,7 +252,9 @@ for i, modello in enumerate(modelli):
         fmt=".3f",        
         cmap="YlGnBu",    
         cbar=(i == 2),    
-        linewidths=.5     
+        linewidths=.5,
+        vmin=vmin_media,  # <-- AGGIUNTO
+        vmax=vmax_media   # <-- AGGIUNTO
     )
     
     axes[i].set_title(modello, fontweight='bold', fontsize=12)
@@ -261,6 +271,10 @@ plt.show()
 # --- HEATMAP DEVIAZIONE STANDARD ---
 fig_ds, axes_ds = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
 
+# 2. Calcoliamo il Min e il Max GLOBALI per la Deviazione Standard
+vmin_ds = df_modelli['Deviazione_standard_f1_macro'].min()
+vmax_ds = df_modelli['Deviazione_standard_f1_macro'].max()
+
 for i, modello in enumerate(modelli):
     df_temp = df_modelli[df_modelli['Modello'] == modello]
     matrice_ds = df_temp.pivot_table(index='cutoff', columns=colonna_x, values='Deviazione_standard_f1_macro')
@@ -273,7 +287,9 @@ for i, modello in enumerate(modelli):
         fmt=".3f", 
         cmap="OrRd",     
         cbar=(i == 2),
-        linewidths=.5
+        linewidths=.5,
+        vmin=vmin_ds,     # <-- AGGIUNTO
+        vmax=vmax_ds      # <-- AGGIUNTO
     )
     
     axes_ds[i].set_title(modello, fontweight='bold', fontsize=12)
