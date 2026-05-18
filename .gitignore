@@ -9,6 +9,8 @@
 *.jpeg
 *.pdf
 
+prova.py
+
 # Ignora le cartelle di cache di Python
 __pycache__/
 .ipynb_checkpoints/
