@@ -3,12 +3,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt 
 report_skb_pca = pd.read_csv("risultati_crossvalidation_skb_pca.csv")
 report_pca = pd.read_csv("risultati_crossvalidation_pca.csv")
-report_pca_rclr = pd.read_csv("risultati_RCLR_crossvalidation_pca.csv")
 report_skb_rclr = pd.read_csv("risultati_RCLR_crossvalidation_skb.csv")
-
+report_no_riduzioni = pd.read_csv("risultati_crossvalidation_no_riduzioni.csv")
 report_skb = pd.read_csv("risultati_crossvalidation_skb.csv")
 report_skb_pca.sort_values(by="Media_f1_macro", ascending=False, inplace=True)
 report_pca.sort_values(by="Media_f1_macro", ascending=False, inplace=True)
-report_skb.sort_values(by="Media_f1_macro", ascending=False, inplace=True)
-report_pca_rclr.sort_values(by="Media_f1_macro", ascending=False, inplace=True)
+report_no_riduzioni.sort_values(by="Media_f1_macro", ascending=False, inplace=True)
 report_skb_rclr.sort_values(by="Media_f1_macro", ascending=False, inplace=True)

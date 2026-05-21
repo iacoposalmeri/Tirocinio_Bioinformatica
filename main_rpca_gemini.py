@@ -24,10 +24,10 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', message='.*random_state does not influence oneDAL.*')
 
 SEED = 42
-scenarios = ['control', 'healthy']
-cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
+scenarios = ['healthy']
+cutoffs = [0.05]
 dim_red = ['RPCA']
-n_components = [15, 30, 50, 70, 100]
+n_components = [50]
 
 results = []
 
