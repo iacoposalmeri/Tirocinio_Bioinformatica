@@ -52,7 +52,7 @@ for scenario in scenarios:
 
                 X_train_scaled, X_test_scaled = standard_scaler(X_train_filtrato, X_test_filtrato)
 
-                pca = PCA(n_components=15,random_state=42)
+                pca = PCA(n_components=15,random_state=SEED)
 
                 X_train_final = pca.fit_transform(X_train_scaled) 
                 X_test_final = pca.transform(X_test_scaled)
@@ -90,7 +90,7 @@ for scenario in scenarios:
             y_train_aligned = y_train.reset_index(drop=True) 
 
             RF = RandomForestClassifier(random_state=SEED, class_weight='balanced')
-            XGB = XGBClassifier(n_jobs=-1)
+            XGB = XGBClassifier(random_state=SEED, n_jobs=-1)
             SVM = svm.SVC(kernel="rbf", class_weight = 'balanced', probability=True, random_state=SEED, cache_size=1000)
 
             cv_strategy = StratifiedKFold(n_splits=10, shuffle=True, random_state=SEED)

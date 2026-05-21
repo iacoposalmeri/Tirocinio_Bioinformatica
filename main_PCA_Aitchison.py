@@ -63,8 +63,8 @@ print(f"Il silhouette score dell'Atichison PCA e' {score_elb}")
 fig_s, ax_s = plt.subplots(figsize = (18,10))
 
 sns.scatterplot(
-    x = X_train_pca_elb[:,1],
-    y = X_train_pca_elb[:,2],
+    x = X_train_pca_elb[:,0],
+    y = X_train_pca_elb[:,1],
     hue = y_train.map({0:'Control', 1 : 'CRC'}),
     palette = {'Control' : "#F46E27", 'CRC' : "#1C5CDC"},
     ax = ax_s,
