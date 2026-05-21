@@ -1,27 +1,39 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import numpy as np
 # ==========================================
 # PANNELLO DI CONTROLLO (MODULARE)
 # ==========================================
-tipo_riduzione = "SKB"  # Cambia in "SKB" o "PCA"
+tipo_riduzione = "no_riduzioni"  # Cambia in "SKB", "PCA" o "no_riduzioni"
 
 if tipo_riduzione == "PCA":
-    file_input = 'risultati_RCLR_crossvalidation_pca.csv'
+    file_input = 'risultati_crossvalidation_pca.csv'
     colonna_x = 'varianza_pca'          
     label_x = 'Varianza Spiegata (PCA)'
     suffisso_salvataggio = 'pca'
-else:
+    
+elif tipo_riduzione == "SKB":
     file_input = 'risultati_RCLR_crossvalidation_skb.csv'
     colonna_x = 'k_skb'
     label_x = 'Numero di feature (k_skb)'
     suffisso_salvataggio = 'skb'
+    
+elif tipo_riduzione == "no_riduzioni":
+    file_input = 'risultati_crossvalidation_no_riduzioni_rclr.csv' # <-- INSERISCI QUI IL NOME DEL TUO CSV SENZA RIDUZIONI
+    colonna_x = 'riduzione'
+    label_x = 'Riduzione Dimensionalità'
+    suffisso_salvataggio = 'no_riduzioni'
 
 # 1. Caricamento UNICO della tabella dinamica
 df = pd.read_csv(file_input)
 
-# Filtriamo il dataframe globale per avere solo i modelli che ci interessano (utile per i grafici comparativi)
+# TRUCCO GENIALE PER "no_riduzioni": 
+# Creiamo una colonna finta per dare un asse X alla Heatmap
+if tipo_riduzione == "no_riduzioni":
+    df['riduzione'] = "Nessuna (Tutti i batteri)"
+
+# Filtriamo il dataframe globale per avere solo i modelli che ci interessano
 df_modelli = df[df['Modello'].isin(['Random Forest', 'XGB', 'SVM'])]
 
 """ 
@@ -226,11 +238,6 @@ plt.show()
 
 
 
-
-
-# ==========================================
-# PARTE 4: HEATMAP (MAPPE DI CALORE)
-# ==========================================
 modelli = ['Random Forest', 'XGB', 'SVM']
 
 # --- HEATMAP MEDIA F1 MACRO ---
@@ -245,16 +252,41 @@ for i, modello in enumerate(modelli):
     matrice = df_temp.pivot_table(index='cutoff', columns=colonna_x, values='Media_f1_macro')
     matrice = matrice.sort_index(ascending=False)
     
+    # Creazione delle etichette personalizzate (F1 + n. componenti se è PCA)
+    annot_labels = np.empty_like(matrice, dtype=object)
+    
+    if tipo_riduzione == "PCA" and 'n_componenti' in df_temp.columns:
+        matrice_n = df_temp.pivot_table(index='cutoff', columns=colonna_x, values='n_componenti')
+        matrice_n = matrice_n.sort_index(ascending=False)
+        
+        for r in range(matrice.shape[0]):
+            for c in range(matrice.shape[1]):
+                val_f1 = matrice.iloc[r, c]
+                val_n = matrice_n.iloc[r, c]
+                if pd.notna(val_f1):
+                    annot_labels[r, c] = f"{val_f1:.3f}\n(n={int(val_n)})"
+                else:
+                    annot_labels[r, c] = ""
+    else:
+        # Fallback se sei in modalità SKB (mostra solo il valore F1)
+        for r in range(matrice.shape[0]):
+            for c in range(matrice.shape[1]):
+                val_f1 = matrice.iloc[r, c]
+                if pd.notna(val_f1):
+                    annot_labels[r, c] = f"{val_f1:.3f}"
+                else:
+                    annot_labels[r, c] = ""
+    
     sns.heatmap(
         matrice, 
         ax=axes[i], 
-        annot=True,       
-        fmt=".3f",        
+        annot=annot_labels, # <-- Usiamo le nostre etichette custom!
+        fmt="",             # <-- Fondamentale lasciare vuoto quando si usano stringhe custom
         cmap="YlGnBu",    
         cbar=(i == 2),    
         linewidths=.5,
-        vmin=vmin_media,  # <-- AGGIUNTO
-        vmax=vmax_media   # <-- AGGIUNTO
+        vmin=vmin_media,  
+        vmax=vmax_media   
     )
     
     axes[i].set_title(modello, fontweight='bold', fontsize=12)
@@ -264,7 +296,7 @@ for i, modello in enumerate(modelli):
 fig.suptitle(f'Mappe di Calore: Media F1 Macro (Cutoff vs {label_x})', fontweight='bold', fontsize=16)
 plt.tight_layout()
 fig.subplots_adjust(top=0.88)
-plt.savefig(f'heatmap_modelli_media_{suffisso_salvataggio}RCLR.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'heatmap_modelli_media_{suffisso_salvataggio}_rclr.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 
@@ -280,16 +312,40 @@ for i, modello in enumerate(modelli):
     matrice_ds = df_temp.pivot_table(index='cutoff', columns=colonna_x, values='Deviazione_standard_f1_macro')
     matrice_ds = matrice_ds.sort_index(ascending=False)
     
+    # Creazione delle etichette personalizzate per la deviazione standard
+    annot_labels_ds = np.empty_like(matrice_ds, dtype=object)
+    
+    if tipo_riduzione == "PCA" and 'n_componenti' in df_temp.columns:
+        matrice_n = df_temp.pivot_table(index='cutoff', columns=colonna_x, values='n_componenti')
+        matrice_n = matrice_n.sort_index(ascending=False)
+        
+        for r in range(matrice_ds.shape[0]):
+            for c in range(matrice_ds.shape[1]):
+                val_ds = matrice_ds.iloc[r, c]
+                val_n = matrice_n.iloc[r, c]
+                if pd.notna(val_ds):
+                    annot_labels_ds[r, c] = f"{val_ds:.3f}\n(n={int(val_n)})"
+                else:
+                    annot_labels_ds[r, c] = ""
+    else:
+        for r in range(matrice_ds.shape[0]):
+            for c in range(matrice_ds.shape[1]):
+                val_ds = matrice_ds.iloc[r, c]
+                if pd.notna(val_ds):
+                    annot_labels_ds[r, c] = f"{val_ds:.3f}"
+                else:
+                    annot_labels_ds[r, c] = ""
+    
     sns.heatmap(
         matrice_ds, 
         ax=axes_ds[i], 
-        annot=True, 
-        fmt=".3f", 
+        annot=annot_labels_ds, # <-- Etichette custom anche qui
+        fmt="",                # <-- Lasciare vuoto
         cmap="OrRd",     
         cbar=(i == 2),
         linewidths=.5,
-        vmin=vmin_ds,     # <-- AGGIUNTO
-        vmax=vmax_ds      # <-- AGGIUNTO
+        vmin=vmin_ds,     
+        vmax=vmax_ds      
     )
     
     axes_ds[i].set_title(modello, fontweight='bold', fontsize=12)
@@ -299,5 +355,5 @@ for i, modello in enumerate(modelli):
 fig_ds.suptitle(f'Mappe di Calore: Deviazione Standard F1 Macro (Cutoff vs {label_x})', fontweight='bold', fontsize=16)
 plt.tight_layout()
 fig_ds.subplots_adjust(top=0.88)
-plt.savefig(f'heatmap_modelli_ds_{suffisso_salvataggio}RCLR.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'heatmap_modelli_ds_{suffisso_salvataggio}_rclr.png', dpi=300, bbox_inches='tight')
 plt.show()

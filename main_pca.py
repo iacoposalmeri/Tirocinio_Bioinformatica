@@ -63,4 +63,4 @@ for cutoff in cutoffs:
                         risultati_cv["Deviazione_standard_f1_macro"].append(report_cv_svm.iloc[1])
 
 df_risultati_cv = pd.DataFrame(risultati_cv)
-df_risultati_cv.to_csv("risultati_crossvalidation_pca_clrpost.csv", index=False)                        
+df_risultati_cv.to_csv("risultati_crossvalidation_pca.csv", index=False)                        
