@@ -6,7 +6,7 @@ from xgboost import XGBClassifier
 from funzioni_crc import maschera_prevalenza, caricamento_pulizia_dati, filtraggio, trasformazione_clr, standard_scaler, crossvalidation, pca_classica, pca_grafico, pca_grafico2
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
 cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
-k_skb = [150, 200, 250]
+k_skb = [50, 100, 150, 200, 250, 300]
 varianze_pca = [0.7, 0.8, 0.9, 0.95] #varianze da testare per la PCA
 
 x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv")
@@ -79,4 +79,4 @@ for cutoff in cutoffs:
                         risultati_cv["Deviazione_standard_f1_macro"].append(report_cv_svm.iloc[1])
 
 df_risultati_cv = pd.DataFrame(risultati_cv)
-df_risultati_cv.to_csv("risultati_crossvalidation_skb+pca.csv", index=False)                        
+df_risultati_cv.to_csv("risultati_crossvalidation_skb_pca.csv", index=False)                        

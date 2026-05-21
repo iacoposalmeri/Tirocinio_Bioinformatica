@@ -7,18 +7,18 @@ from sklearn.preprocessing import MaxAbsScaler
 from funzioni_crc import maschera_prevalenza,trasformazione_rclr_nativa, caricamento_pulizia_dati, filtraggio, trasformazione_clr, standard_scaler, crossvalidation
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
 cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
-k_skb = [100, 150, 200]
+k_skb = [50, 100, 150, 200, 250, 300]
 
 x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv")
 
 X_train, X_test, y_train, y_test = train_test_split(x, y_binary, test_size=0.2, random_state=42, stratify=y_binary)
-X_train_clr = trasformazione_rclr_nativa(X_train)
-X_test_clr = trasformazione_rclr_nativa(X_test)
+
 
 risultati_cv = {"cutoff": [], "k_skb": [], "Modello": [], "Media_f1_macro": [], "Deviazione_standard_f1_macro": []}
 for cutoff in cutoffs:
     batteri_da_tenere = maschera_prevalenza(X_train, y_train, cutoff)
-
+    X_train_clr = trasformazione_rclr_nativa(X_train)
+    X_test_clr = trasformazione_rclr_nativa(X_test)
     print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train_clr.shape}")
     X_train_filtrato = filtraggio(X_train_clr, batteri_da_tenere)
     X_test_filtrato = filtraggio(X_test_clr, batteri_da_tenere)

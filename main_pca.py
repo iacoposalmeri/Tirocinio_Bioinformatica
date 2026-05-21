@@ -11,14 +11,14 @@ varianze_pca = [0.7, 0.8, 0.9, 0.95] #varianze da testare per la PCA
 x, y_binary, metadati_finali_no_desease, metadati_esclusi = caricamento_pulizia_dati("Metadati_CRC_Dataset.csv", "Abbondanze_CRC_Dataset.csv")
 
 X_train, X_test, y_train, y_test = train_test_split(x, y_binary, test_size=0.2, random_state=42, stratify=y_binary)
-X_train_clr = trasformazione_clr(X_train)
-X_test_clr = trasformazione_clr(X_test)
+
 
 risultati_cv = {"cutoff": [], "varianza_pca": [],  "n_componenti": [], "Modello": [], "Media_f1_macro": [], "Deviazione_standard_f1_macro": []}
 
 for cutoff in cutoffs:
         batteri_da_tenere = maschera_prevalenza(X_train, y_train, cutoff)
-
+        X_train_clr = trasformazione_clr(X_train)
+        X_test_clr = trasformazione_clr(X_test)
         print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train_clr.shape}")
         X_train_filtrato = filtraggio(X_train_clr, batteri_da_tenere)
         X_test_filtrato = filtraggio(X_test_clr, batteri_da_tenere)
@@ -63,4 +63,4 @@ for cutoff in cutoffs:
                         risultati_cv["Deviazione_standard_f1_macro"].append(report_cv_svm.iloc[1])
 
 df_risultati_cv = pd.DataFrame(risultati_cv)
-df_risultati_cv.to_csv("risultati_crossvalidation_pca.csv", index=False)                        
+df_risultati_cv.to_csv("risultati_crossvalidation_pca_clrpost.csv", index=False)                        

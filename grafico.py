@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 tipo_riduzione = "SKB"  # Cambia in "SKB" o "PCA"
 
 if tipo_riduzione == "PCA":
-    file_input = 'risultati_crossvalidation_pca.csv'
+    file_input = 'risultati_RCLR_crossvalidation_pca.csv'
     colonna_x = 'varianza_pca'          
     label_x = 'Varianza Spiegata (PCA)'
     suffisso_salvataggio = 'pca'
@@ -24,7 +24,7 @@ df = pd.read_csv(file_input)
 # Filtriamo il dataframe globale per avere solo i modelli che ci interessano (utile per i grafici comparativi)
 df_modelli = df[df['Modello'].isin(['Random Forest', 'XGB', 'SVM'])]
 
-
+""" 
 # ==========================================
 # PARTE 1: GRAFICI SINGOLI (MEDIA F1 MACRO)
 # ==========================================
@@ -222,7 +222,7 @@ g4.figure.suptitle(f'Confronto Modelli: Deviazione Standard vs Cutoff per ogni {
 g4.figure.subplots_adjust(top=0.9)
 plt.savefig(f'confronto_modelli_ds_cutoff_{suffisso_salvataggio}.png', bbox_inches='tight')
 plt.show()
-
+ """
 
 
 
@@ -264,7 +264,7 @@ for i, modello in enumerate(modelli):
 fig.suptitle(f'Mappe di Calore: Media F1 Macro (Cutoff vs {label_x})', fontweight='bold', fontsize=16)
 plt.tight_layout()
 fig.subplots_adjust(top=0.88)
-plt.savefig(f'heatmap_modelli_media_{suffisso_salvataggio}.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'heatmap_modelli_media_{suffisso_salvataggio}RCLR.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 
@@ -299,5 +299,5 @@ for i, modello in enumerate(modelli):
 fig_ds.suptitle(f'Mappe di Calore: Deviazione Standard F1 Macro (Cutoff vs {label_x})', fontweight='bold', fontsize=16)
 plt.tight_layout()
 fig_ds.subplots_adjust(top=0.88)
-plt.savefig(f'heatmap_modelli_ds_{suffisso_salvataggio}.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'heatmap_modelli_ds_{suffisso_salvataggio}RCLR.png', dpi=300, bbox_inches='tight')
 plt.show()
