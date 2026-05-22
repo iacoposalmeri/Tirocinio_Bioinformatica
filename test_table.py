@@ -132,4 +132,4 @@ for scenario in scenarios:
 
 
 df_final = pd.DataFrame(results)
-df_final.to_csv("Risultati_Esplorazione_Totale.csv", index=False)
+df_final.to_csv("Risultati_Benchmark.csv", index=False)

@@ -17,6 +17,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
 
 from sklearnex import patch_sklearn
 patch_sklearn()
@@ -85,7 +86,7 @@ fig_elb.savefig("Explained_Variance_RPCA.png", dpi=300, bbox_inches='tight') """
 
 results = []
 
-n_components = [15, 30, 50, 70, 100]
+n_components = [15]
 
 for scenario in scenarios:
 
@@ -105,6 +106,17 @@ for scenario in scenarios:
 
                     X_train_filtrato = filtraggio(X_train, batteri_da_tenere)
                     X_test_filtrato = filtraggio(X_test, batteri_da_tenere)
+
+                    SKB = SelectKBest(score_func=mutual_info_classif, k=100)
+
+                    X_train_skb = SKB.fit_transform(X_train_filtrato, y_train)
+
+                    X_test_skb = SKB.transform(X_test_filtrato)
+
+                    skb_columns = SKB.get_feature_names_out(X_train_filtrato.columns)
+
+                    X_train_filtrato = pd.DataFrame(X_train_skb, index=X_train_filtrato.index, columns=skb_columns)
+                    X_test_filtrato = pd.DataFrame(X_test_skb, index=X_test_filtrato.index, columns=skb_columns)
 
                     X_train_biom = table.Table(X_train_filtrato.values.T, observation_ids=X_train_filtrato.columns, sample_ids=X_train_filtrato.index)
 
@@ -134,7 +146,7 @@ for scenario in scenarios:
 
                 rf_res = cross_validate(RF, X_train_final, y_train_aligned, cv=cv_strategy, scoring=measures)
                 xgb_res = cross_validate(XGB, X_train_final, y_train_aligned, cv=cv_strategy, scoring=measures)
-                svm_res = cross_validate(SVM, X_train_final, y_train_aligned, cv=cv_strategy, n_jobs=-1, scoring=measures)
+                svm_res = cross_validate(SVM, X_train_final, y_train_aligned, cv=cv_strategy, scoring=measures)
 
                 modelli_eval = {
                     'RandomForest': rf_res,
