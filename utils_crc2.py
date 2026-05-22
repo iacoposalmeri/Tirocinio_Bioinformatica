@@ -2,15 +2,15 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
-from skbio.stats.composition import clr
+from skbio.stats.composition import clr, multiplicative_replacement as multi_replace
 
 import numpy as np
 
-def multi_replace(matrice, delta=1e-9):
+""" def multi_replace(matrice, delta=1e-9):
     matrice_arr = np.array(matrice, dtype=float)
     matrice_arr[matrice_arr == 0] = delta
     return matrice_arr
-
+ """
 from sklearn import svm
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
@@ -103,6 +103,10 @@ def maschera_prevalenza(X_train, y_train, cutoff):
 
 def trasformazione_clr(X):
     """output: X_filtrato"""
+    X_check = X.copy()
+    if (X_check.sum(axis=1) == 0).any():
+        # Aggiungiamo un valore infinitesimale solo dove necessario
+        X_check = X_check.replace(0, 1e-9)
     # Applichiamo la trasformazione CLR ai dati filtrati
     # La funzione multi_replace sostituisce i valori zero con un piccolo valore positivo per evitare problemi con la trasformazione CLR
     X_nozeri = multi_replace(X)
