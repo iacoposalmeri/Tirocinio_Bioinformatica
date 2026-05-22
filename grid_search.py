@@ -32,7 +32,7 @@ patch_sklearn()
 
 SEED = 42
 
-scenarios = ['control', 'healthy']
+scenarios = ['healthy']
 cutoffs = [0.03, 0.05, 0.07]
 
 mcc_scorer = make_scorer(matthews_corrcoef)
