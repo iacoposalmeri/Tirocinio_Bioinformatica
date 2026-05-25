@@ -37,7 +37,7 @@ os.environ['PYTHONHASHSEED'] = str(SEED)
 random.seed(SEED)
 np.random.seed(SEED)
 
-scenarios = ['control', 'healthy']
+scenarios = ['healthy']
 cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
 
 mcc_scorer = make_scorer(matthews_corrcoef)
