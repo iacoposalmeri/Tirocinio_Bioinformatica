@@ -25,7 +25,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
 
 # Import custom utils
-from utils_crc2 import * from sklearnex import patch_sklearn
+from utils_crc2 import * 
+from sklearnex import patch_sklearn
 patch_sklearn()
 
 # --- PARAMETRI GLOBALI ---
