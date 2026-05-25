@@ -93,6 +93,9 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
             X_tr_clr_base = trasformazione_clr(X_tr_filt)
             X_val_clr_base = trasformazione_clr(X_val_filt)
             
+            X_tr_clr_base.index = X_tr_filt.index
+            X_val_clr_base.index = X_val_filt.index
+
             scaler_base_clr = StandardScaler()
             reps_train['none (with CLR)'] = scaler_base_clr.fit_transform(X_tr_clr_base)
             reps_val['none (with CLR)'] = scaler_base_clr.transform(X_val_clr_base)
@@ -100,7 +103,8 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
             # --- 3. SKB (con CLR) --- NUOVO
             X_tr_skb_clr = trasformazione_clr(X_tr_skb_df)
             X_val_skb_clr = trasformazione_clr(X_val_skb_df)
-            
+            X_tr_skb_clr.index = X_tr_skb_df.index
+            X_val_skb_clr.index = X_val_skb_df.index
             scaler_skb_clr = StandardScaler()
             reps_train['SKB (with CLR)'] = scaler_skb_clr.fit_transform(X_tr_skb_clr)
             reps_val['SKB (with CLR)'] = scaler_skb_clr.transform(X_val_skb_clr)
@@ -135,7 +139,8 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
             # --- 7. Robust CLR (senza RPCA) --- NUOVO
             X_tr_rclr = trasformazione_rclr_nativa(X_tr_filt)
             X_val_rclr = trasformazione_rclr_nativa(X_val_filt)
-            
+            X_tr_rclr.index = X_tr_filt.index
+            X_val_rclr.index = X_val_filt.index
             scaler_rclr = StandardScaler()
             reps_train['Robust CLR'] = scaler_rclr.fit_transform(X_tr_rclr)
             reps_val['Robust CLR'] = scaler_rclr.transform(X_val_rclr)
@@ -143,7 +148,8 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
             # --- 8. SKB + Robust CLR --- NUOVO
             X_tr_skb_rclr = trasformazione_rclr_nativa(X_tr_skb_df)
             X_val_skb_rclr = trasformazione_rclr_nativa(X_val_skb_df)
-            
+            X_tr_skb_rclr.index = X_tr_skb_df.index
+            X_val_skb_rclr.index = X_val_skb_df.index
             scaler_skb_rclr = StandardScaler()
             reps_train['SKB + Robust CLR'] = scaler_skb_rclr.fit_transform(X_tr_skb_rclr)
             reps_val['SKB + Robust CLR'] = scaler_skb_rclr.transform(X_val_skb_rclr)
