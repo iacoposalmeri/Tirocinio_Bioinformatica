@@ -202,4 +202,4 @@ df_final = df_raw.groupby(['Scenario', 'Cutoff', 'Technique', 'Model']).agg({
 }).reset_index()
 
 df_final.columns = ['_'.join(col).strip() if col[1] else col[0] for col in df_final.columns.values]
-df_final.to_csv("Fase1_Benchmark_Riduzioni.csv", index=False)
+df_final.to_csv("Fase1_Benchmark_Riduzioni_PT2.csv", index=False)

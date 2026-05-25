@@ -187,7 +187,7 @@ for scenario in tqdm(scenarios, desc="Scenari"):
                 colonne_ordinate = ['Scenario', 'Cutoff', 'Technique', 'Model', 'Test_MCC', 'Test_F1', 'Test_AUC', 'CV_MCC_Score', 'Best_Params']
                 df_results = df_results[colonne_ordinate]
 
-                df_results.to_csv("Fase2_Vincitori_GridSearch.csv", index=False)
+                df_results.to_csv("Fase2_Vincitori_GridSearch_PT2.csv", index=False)
 
 
 print("\nCOMPLETATO! I campioni assoluti sono stati salvati in Fase2_Vincitori_GridSearch.csv")
