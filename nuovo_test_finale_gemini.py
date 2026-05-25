@@ -111,7 +111,7 @@ for scenario in tqdm(SCENARIOS, desc="Scenarios:"):
 
                 # --- C. SELECT K BEST E SUE COMBINAZIONI ---
                 for k in K_BEST_VALUES:
-                    # Assicuriamoci di non chiedere più feature di quelle esistenti
+                    # Continuiamo a usare eff_k per non far crashare scikit-learn
                     eff_k = min(k, X_tr_t.shape[1])
                     
                     skb = SelectKBest(score_func=mutual_info_classif, k=eff_k)
@@ -122,9 +122,9 @@ for scenario in tqdm(SCENARIOS, desc="Scenarios:"):
                     X_tr_skb_scaled = scaler_skb.fit_transform(X_tr_skb)
                     X_val_skb_scaled = scaler_skb.transform(X_val_skb)
 
-                    # SOLO SKB
-                    reps_train[f'{trans_name}_SKB_{eff_k}'] = X_tr_skb_scaled
-                    reps_val[f'{trans_name}_SKB_{eff_k}'] = X_val_skb_scaled
+                    # SOLO SKB -> USIAMO 'k' E NON 'eff_k' PER IL NOME
+                    reps_train[f'{trans_name}_SKB_{k}'] = X_tr_skb_scaled
+                    reps_val[f'{trans_name}_SKB_{k}'] = X_val_skb_scaled
 
                     # SKB + PCA
                     if trans_name != 'rCLR':
@@ -134,9 +134,9 @@ for scenario in tqdm(SCENARIOS, desc="Scenarios:"):
                             X_val_skb_pca = pca_skb.transform(X_val_skb_scaled)
 
                             scaler_skb_pca = StandardScaler()
-                            reps_train[f'{trans_name}_SKB_{eff_k}_PCA_{int(var*100)}'] = scaler_skb_pca.fit_transform(X_tr_skb_pca)
-                            reps_val[f'{trans_name}_SKB_{eff_k}_PCA_{int(var*100)}'] = scaler_skb_pca.transform(X_val_skb_pca)
-
+                            # USIAMO 'k' E NON 'eff_k' PER IL NOME
+                            reps_train[f'{trans_name}_SKB_{k}_PCA_{int(var*100)}'] = scaler_skb_pca.fit_transform(X_tr_skb_pca)
+                            reps_val[f'{trans_name}_SKB_{k}_PCA_{int(var*100)}'] = scaler_skb_pca.transform(X_val_skb_pca)
 
             # --- CLASSIFICATION ---
             # Modelli con parametri di default + seed
