@@ -58,7 +58,6 @@ clr_transformer = FunctionTransformer(trasformazione_clr)
 pipe_aitchison = Pipeline([
     ('clr',clr_transformer),
     ('pca',PCA(svd_solver='full',random_state=SEED)),
-    ('scaler',StandardScaler()),
     ('classifier',None)
 ])
 
@@ -76,10 +75,9 @@ pipe_rclr = Pipeline([
     ('classifier', None)
 ])
 
-
-pipe_skb_rclr = Pipeline([
-    ('skb', SelectKBest(score_func=mutual_info_classif).set_output(transform="pandas")),
+pipe_rclr_skb = Pipeline([
     ('rclr',rclr_transformer),
+    ('skb', SelectKBest(score_func=mutual_info_classif).set_output(transform="pandas")),
     ('scaler',StandardScaler()),
     ('classifier', None)
 ])
@@ -90,7 +88,7 @@ pipelines = {
     'Aitchison': pipe_aitchison,
     'None (CLR)': pipe_none_clr,
     'RCLR': pipe_rclr,
-    'SKB + RCLR': pipe_skb_rclr
+    'RCLR + SKB': pipe_rclr_skb 
 }
 
 models = {
@@ -181,7 +179,7 @@ param_grids = {
             {'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
         ]
     },
-    'SKB + RCLR': {
+    'RCLR + SKB': {
         'RF': {
             'skb__k': [50, 100, 200], 
             'classifier__n_estimators': [100, 300]

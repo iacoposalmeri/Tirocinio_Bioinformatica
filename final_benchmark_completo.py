@@ -6,14 +6,13 @@ THIS SCRIPT IS A BENCHMARK FOR CRC CLASSIFICATION WITH THE ADDITIONAL FOLLOWING 
 - Aitchison PCA
 - PCoA with Bray-Curtis
 - RPCA
-- SKB + RPCA
 - none (con CLR)
 - SKB (con CLR)
 - SKB + PCA
 - SKB + Aitchison PCA
 - SKB + PCoA with Bray-Curtis
-- Robust CLR (senza RPCA)
-- SKB + Robust CLR
+- Robust CLR
+- Robust CLR + SKB
 
 GRID-SEARCH IS NOT USED HERE BECAUSE WE'RE TRYING TO FIND ONLY THE BEST REDUCTION TECHNIQUE
 IN ANOTHER SCRIPT WE'LL USE GRID-SEARCH FOR EVERY CLASSIFICATION METHOD WITH ONLY THE BEST METHOD
@@ -95,154 +94,113 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
             reps_val['none'] = scaler_base.transform(X_val_filt)
 
             # SKB
-            skb = SelectKBest(score_func=mutual_info_classif, k=min(K_BEST_FEATURES, X_tr_filt.shape[1]))
-            X_tr_skb_raw = skb.fit_transform(X_tr_filt, y_tr)
-            X_val_skb_raw = skb.transform(X_val_filt)
+            skb_raw = SelectKBest(score_func=mutual_info_classif, k=min(K_BEST_FEATURES, X_tr_filt.shape[1]))
+            X_tr_skb_raw = skb_raw.fit_transform(X_tr_filt, y_tr)
+            X_val_skb_raw = skb_raw.transform(X_val_filt)
             
             scaler_skb = StandardScaler()
             reps_train['SKB'] = scaler_skb.fit_transform(X_tr_skb_raw)
             reps_val['SKB'] = scaler_skb.transform(X_val_skb_raw)
 
+            
+            # Calcolo skb df
+            skb_raw_columns = skb_raw.get_feature_names_out(X_tr_filt.columns)
+            X_tr_skb_df = pd.DataFrame(X_tr_skb_raw, index=X_tr_filt.index, columns=skb_raw_columns)
+            X_val_skb_df = pd.DataFrame(X_val_skb_raw, index=X_val_filt.index, columns=skb_raw_columns)
+
             # PCA
             pca = PCA(n_components=N_COMPONENTS, svd_solver='full', random_state=SEED)
             scaler_pre = StandardScaler()
-            scaler_post = StandardScaler()
-
+            
             X_tr_scaled = scaler_pre.fit_transform(X_tr_filt)
-            X_tr_pca = pca.fit_transform(X_tr_scaled)
-            reps_train['PCA'] = scaler_post.fit_transform(X_tr_pca)
-
+            reps_train['PCA'] = pca.fit_transform(X_tr_scaled)
+            
             X_val_scaled = scaler_pre.transform(X_val_filt)
-            X_val_pca = pca.transform(X_val_scaled)
-            reps_val['PCA'] = scaler_post.transform(X_val_pca)
+            reps_val['PCA'] = pca.transform(X_val_scaled)
 
-            # AITCHISON PCA
-            pca_aitchison = PCA(n_components=N_COMPONENTS, svd_solver='full', random_state=SEED)
-            scaler_pca_aitchison = StandardScaler()
+            # SKB + PCA
+            pca_skb = PCA(n_components=N_COMPONENTS, svd_solver='full', random_state=SEED)
+            scaler_pre_pca_skb = StandardScaler()
+            
+            X_tr_scaled_skb = scaler_pre_pca_skb.fit_transform(X_tr_skb_df)
+            reps_train['SKB + PCA'] = pca_skb.fit_transform(X_tr_scaled_skb)
+            
+            X_val_scaled_skb = scaler_pre_pca_skb.transform(X_val_skb_df)
+            reps_val['SKB + PCA'] = pca_skb.transform(X_val_scaled_skb)
 
-            X_tr_clr = trasformazione_clr(X_tr_filt)
-            X_tr_pca_aitchison = pca_aitchison.fit_transform(X_tr_clr)
-            reps_train['PCA_Aitchison'] = scaler_pca_aitchison.fit_transform(X_tr_pca_aitchison)
-
-            X_val_clr = trasformazione_clr(X_val_filt)
-            X_val_pca_aitchison = pca_aitchison.transform(X_val_clr)
-            reps_val['PCA_Aitchison'] = scaler_pca_aitchison.transform(X_val_pca_aitchison)
-
-            # PCoA (Bray-Curtis)
+            # Bray-Curtis
             reps_train['Bray_Curtis'] = pairwise_distances(X_tr_filt, metric='braycurtis')
             reps_val['Bray_Curtis'] = pairwise_distances(X_val_filt, X_tr_filt, metric='braycurtis')
 
-            # RPCA
-            X_tr_rpca_safe = X_tr_filt.copy()
-            mask_zeri_rpca = (X_tr_rpca_safe.sum(axis=1) == 0)
-            if mask_zeri_rpca.any():
-                X_tr_rpca_safe.loc[mask_zeri_rpca] = 1e-9
-
-            X_tr_biom = table.Table(X_tr_rpca_safe.values.T, observation_ids=X_tr_rpca_safe.columns, sample_ids=X_tr_rpca_safe.index)
-
-            ordination, _ = rpca(X_tr_biom, n_components=min(N_COMPONENTS, X_tr_filt.shape[1]-1))
-
-            val_rpca_projected = X_val_clr @ ordination.features.values
-
-            scaler_rpca = StandardScaler()
-            reps_train['RPCA'] = scaler_rpca.fit_transform(ordination.samples.values)
-            reps_val['RPCA'] = scaler_rpca.transform(val_rpca_projected)
+            reps_train['SKB + Bray_Curtis'] = pairwise_distances(X_tr_skb_df, metric='braycurtis')
+            reps_val['SKB + Bray_Curtis'] = pairwise_distances(X_val_skb_df, X_tr_skb_df, metric='braycurtis')
 
 
-            # SKB + RPCA
-            skb_columns = skb.get_feature_names_out(X_tr_filt.columns)
-
-            X_tr_skb_df = pd.DataFrame(skb.transform(X_tr_filt), index=X_tr_filt.index, columns=skb_columns)
-            X_val_skb_df = pd.DataFrame(skb.transform(X_val_filt), index=X_val_filt.index, columns=skb_columns)
-
-            X_tr_skb_safe = X_tr_skb_df.copy()
-            mask_zeri_skb = (X_tr_skb_safe.sum(axis=1) == 0)
-            if mask_zeri_skb.any():
-                X_tr_skb_safe.loc[mask_zeri_skb] = 1e-9
-
-            X_tr_biom_skb = table.Table(X_tr_skb_safe.values.T, observation_ids=X_tr_skb_safe.columns, sample_ids=X_tr_skb_safe.index)
-
-            rpca_n_comp = min(N_COMPONENTS, len(skb_columns)-1)
-            ordination_skb, _ = rpca(X_tr_biom_skb, n_components=rpca_n_comp)
-
-            X_val_skb_clr = trasformazione_clr(X_val_skb_df)
-            val_rpca_projected_skb = X_val_skb_clr @ ordination_skb.features.values
-
-            scaler_rpca_skb = StandardScaler()
-            reps_train['SKB_RPCA'] = scaler_rpca_skb.fit_transform(ordination_skb.samples.values)
-            reps_val['SKB_RPCA'] = scaler_rpca_skb.transform(val_rpca_projected_skb)
-
-            # none (with CLR)
+            # Calcolo CLR
             X_tr_clr_base = trasformazione_clr(X_tr_filt)
             X_val_clr_base = trasformazione_clr(X_val_filt)
-            
             X_tr_clr_base.index = X_tr_filt.index
             X_val_clr_base.index = X_val_filt.index
 
+            # none (with CLR)
             scaler_base_clr = StandardScaler()
             reps_train['none (with CLR)'] = scaler_base_clr.fit_transform(X_tr_clr_base)
             reps_val['none (with CLR)'] = scaler_base_clr.transform(X_val_clr_base)
 
-            # SKB (with CLR)
-            X_tr_skb_clr = trasformazione_clr(X_tr_skb_df)
-            X_val_skb_clr = trasformazione_clr(X_val_skb_df)
-            X_tr_skb_clr.index = X_tr_skb_df.index
-            X_val_skb_clr.index = X_val_skb_df.index
-            scaler_skb_clr = StandardScaler()
-            reps_train['SKB (with CLR)'] = scaler_skb_clr.fit_transform(X_tr_skb_clr)
-            reps_val['SKB (with CLR)'] = scaler_skb_clr.transform(X_val_skb_clr)
+            # CLR + SKB
+            skb_clr = SelectKBest(score_func=mutual_info_classif, k=min(K_BEST_FEATURES, X_tr_clr_base.shape[1]))
+            X_tr_clr_skb = skb_clr.fit_transform(X_tr_clr_base, y_tr)
+            X_val_clr_skb = skb_clr.transform(X_val_clr_base)
+            
+            scaler_clr_skb = StandardScaler()
+            reps_train['CLR + SKB'] = scaler_clr_skb.fit_transform(X_tr_clr_skb)
+            reps_val['CLR + SKB'] = scaler_clr_skb.transform(X_val_clr_skb)
 
-            # 4. SKB + PCA
-            pca = PCA(n_components=N_COMPONENTS, svd_solver='full', random_state=SEED)
-            scaler_pre_pca = StandardScaler()
-            scaler_post_pca = StandardScaler()
-
-            X_tr_scaled = scaler_pre_pca.fit_transform(X_tr_skb_df)
-            X_tr_pca = pca.fit_transform(X_tr_scaled)
-            reps_train['SKB + PCA'] = scaler_post_pca.fit_transform(X_tr_pca)
-
-            X_val_scaled = scaler_pre_pca.transform(X_val_skb_df)
-            X_val_pca = pca.transform(X_val_scaled)
-            reps_val['SKB + PCA'] = scaler_post_pca.transform(X_val_pca)
-
-            # SKB + AITCHISON PCA
+            # AITCHISON PCA
             pca_aitchison = PCA(n_components=N_COMPONENTS, svd_solver='full', random_state=SEED)
-            scaler_pca_aitchison = StandardScaler()
+            reps_train['PCA_Aitchison'] = pca_aitchison.fit_transform(X_tr_clr_base)
+            reps_val['PCA_Aitchison'] = pca_aitchison.transform(X_val_clr_base)
 
-            X_tr_pca_aitchison = pca_aitchison.fit_transform(X_tr_skb_clr) # Uso l'SKB già convertito in CLR sopra
-            reps_train['SKB + PCA_Aitchison'] = scaler_pca_aitchison.fit_transform(X_tr_pca_aitchison)
+            # CLR + SKB + PCA
+            pca_aitchison_skb = PCA(n_components=N_COMPONENTS, svd_solver='full', random_state=SEED)
+            reps_train['CLR + SKB + PCA'] = pca_aitchison_skb.fit_transform(X_tr_clr_skb)
+            reps_val['CLR + SKB + PCA'] = pca_aitchison_skb.transform(X_val_clr_skb)
 
-            X_val_pca_aitchison = pca_aitchison.transform(X_val_skb_clr)
-            reps_val['SKB + PCA_Aitchison'] = scaler_pca_aitchison.transform(X_val_pca_aitchison)
+            # RPCA
+            X_tr_biom = table.Table(X_tr_filt.values.T, observation_ids=X_tr_filt.columns, sample_ids=X_tr_filt.index)
+            ordination, _ = rpca(X_tr_biom, n_components=min(N_COMPONENTS, X_tr_filt.shape[1]-1))
+            
+            X_val_rclr_for_rpca = trasformazione_rclr_nativa(X_val_filt)
+            val_rpca_projected = X_val_rclr_for_rpca @ ordination.features.values
 
-            # SKB + PCoA (Bray-Curtis)
-            reps_train['SKB + Bray_Curtis'] = pairwise_distances(X_tr_skb_df, metric='braycurtis')
-            reps_val['SKB + Bray_Curtis'] = pairwise_distances(X_val_skb_df, X_tr_skb_df, metric='braycurtis')
+            reps_train['RPCA'] = ordination.samples.values
+            reps_val['RPCA'] = val_rpca_projected.values
 
             # Robust CLR
             X_tr_rclr = trasformazione_rclr_nativa(X_tr_filt)
             X_val_rclr = trasformazione_rclr_nativa(X_val_filt)
             X_tr_rclr.index = X_tr_filt.index
             X_val_rclr.index = X_val_filt.index
+            
             scaler_rclr = StandardScaler()
             reps_train['Robust CLR'] = scaler_rclr.fit_transform(X_tr_rclr)
             reps_val['Robust CLR'] = scaler_rclr.transform(X_val_rclr)
 
-            # SKB + Robust CLR
-            X_tr_skb_rclr = trasformazione_rclr_nativa(X_tr_skb_df)
-            X_val_skb_rclr = trasformazione_rclr_nativa(X_val_skb_df)
-            X_tr_skb_rclr.index = X_tr_skb_df.index
-            X_val_skb_rclr.index = X_val_skb_df.index
-            scaler_skb_rclr = StandardScaler()
-            reps_train['SKB + Robust CLR'] = scaler_skb_rclr.fit_transform(X_tr_skb_rclr)
-            reps_val['SKB + Robust CLR'] = scaler_skb_rclr.transform(X_val_skb_rclr)
+            # Robust CLR + SKB
+            skb_rclr = SelectKBest(score_func=mutual_info_classif, k=min(K_BEST_FEATURES, X_tr_rclr.shape[1]))
+            X_tr_rclr_skb = skb_rclr.fit_transform(X_tr_rclr, y_tr)
+            X_val_rclr_skb = skb_rclr.transform(X_val_rclr)
+            
+            scaler_rclr_skb = StandardScaler()
+            reps_train['Robust CLR + SKB'] = scaler_rclr_skb.fit_transform(X_tr_rclr_skb)
+            reps_val['Robust CLR + SKB'] = scaler_rclr_skb.transform(X_val_rclr_skb)
             
             # CLASSIFICATION
 
             models = {
-                'RandomForest': RandomForestClassifier(random_state=SEED, class_weight='balanced'),
+                'RandomForest': RandomForestClassifier(random_state=SEED),
                 'XGBoost': XGBClassifier(random_state=SEED, tree_method='hist'),
-                'SVM': SVC(kernel="rbf", class_weight='balanced', probability=True, random_state=SEED, cache_size=2000)
+                'SVM': SVC(kernel="rbf", probability=True, random_state=SEED, cache_size=2000)
             }
 
             for rep_name, X_train_final in reps_train.items():
@@ -275,6 +233,8 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
                         'F1': f1_score(y_val, y_pred),
                         'AUC': roc_auc_score(y_val, y_proba),
                     })
+
+                pd.DataFrame(results).to_csv("Backup_Temp_Benchmark.csv", index=False)
 
 
 df_raw = pd.DataFrame(results)
