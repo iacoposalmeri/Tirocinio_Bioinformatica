@@ -83,7 +83,7 @@ pipe_rclr_skb = Pipeline([
 ])
 
 pipe_consensus = Pipeline([
-    ('consensus', ConsensusFilter()),
+    ('consensus', ConsensusFilter(threshold=3)),
     ('scaler', StandardScaler()),
     ('classifier', None)
 ])
@@ -284,5 +284,5 @@ for scenario in tqdm(scenarios, desc="Scenari"):
                 colonne_ordinate = ['Scenario', 'Cutoff', 'Technique', 'Model', 'Test_MCC', 'Test_F1', 'Test_AUC', 'CV_MCC_Score', 'Best_Params']
                 df_results = df_results[colonne_ordinate]
 
-                df_results.to_csv("Fase2_Vincitori_GridSearch_Maggioranza.csv", index=False)
+                df_results.to_csv("Fase2_Vincitori_GridSearch_INTERSEZIONE.csv", index=False)
 
