@@ -223,15 +223,19 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
                     y_pred = clf.predict(X_val_final)
                     y_proba = clf.predict_proba(X_val_final)[:, 1]
                     
+                    mcc = float(matthews_corrcoef(y_val, y_pred))
+                    f1 = float(f1_score(y_val, y_pred))
+                    auc = float(roc_auc_score(y_val, y_proba))
+
                     results.append({
                         'Scenario': scenario,
                         'Cutoff': cutoff,
                         'Technique': rep_name,
                         'Model': model_name,
                         'Fold': fold + 1,
-                        'MCC': matthews_corrcoef(y_val, y_pred),
-                        'F1': f1_score(y_val, y_pred),
-                        'AUC': roc_auc_score(y_val, y_proba),
+                        'MCC': mcc,
+                        'F1': f1,
+                        'AUC': auc,
                     })
 
                 pd.DataFrame(results).to_csv("Backup_Temp_Benchmark.csv", index=False)

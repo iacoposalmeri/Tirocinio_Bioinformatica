@@ -228,7 +228,9 @@ for scenario in tqdm(scenarios, desc="Scenari"):
                     grid, 
                     cv=cv_inner, 
                     scoring=mcc_scorer, 
-                    refit=True 
+                    refit=True,
+                    n_jobs=-1,
+                    verbose=1
                 )
                 
                 search.fit(X_train_filt, y_train)

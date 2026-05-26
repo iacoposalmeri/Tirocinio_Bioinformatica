@@ -21,29 +21,24 @@ def trasformazione_rclr_nativa(X):
     Implementazione nativa della Robust CLR per evitare conflitti di dipendenze.
     Lavora riga per riga (paziente per paziente).
     La matematica:
-    1. Ignora gli zeri.
-    2. Fa il logaritmo dei valori > 0.
-    3. Sottrae la media dei logaritmi.
-    4. Gli zeri restano zeri.
+    # 1. Assicuriamoci di lavorare su una copia float
+    2. Sostituiamo gli zeri con np.nan
+    3. Calcoliamo i logaritmi
+    4. Media dei logaritmi ignorando i nan (esclude gli zeri)
+    5. Sottrazione (riga per riga)
+    6. Riempimento zeri e conversione forzata a float
     '''
-    # 1. Copiamo i dati per sicurezza e sostituiamo gli zeri con NaN (Not a Number)
-    # In questo modo, le funzioni matematiche li ignoreranno automaticamente!
-    X_nan = X.replace(0, np.nan)
+    X_df = X.astype(float).copy()
     
-    # 2. Calcoliamo il logaritmo naturale di tutti i batteri presenti
-    log_X = np.log(X_nan)
+    X_df[X_df <= 0] = np.nan
     
-    # 3. Calcoliamo la media dei logaritmi per ogni riga (Paziente). 
-    # Pandas ignorerà i NaN, quindi farà la media SOLO sui batteri presenti!
+    log_X = np.log(X_df)
+    
     media_log = log_X.mean(axis=1)
     
-    # 4. Sottraiamo la media (Questo è il passaggio che fa la "ratio")
-    X_rclr = log_X.subtract(media_log, axis=0)
+    X_rclr = log_X.sub(media_log, axis=0)
     
-    # 5. Rimettiamo gli zeri al posto dei NaN
-    X_rclr = X_rclr.fillna(0)
-    
-    return X_rclr
+    return X_rclr.fillna(0).astype(float)
 
 def caricamento_pulizia_dati(file_metadati, file_abbondanze, condizione_negativa='control'):
     """ output:x, y_binary, metadati_finali_no_disease, metadati_esclusi """
