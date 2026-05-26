@@ -82,13 +82,20 @@ pipe_rclr_skb = Pipeline([
     ('classifier', None)
 ])
 
+pipe_consensus = Pipeline([
+    ('consensus', ConsensusFilter()),
+    ('scaler', StandardScaler()),
+    ('classifier', None)
+])
+
 pipelines = {
-    'None': pipe_none,
-    'SKB': pipe_skb,
-    'Aitchison': pipe_aitchison,
-    'None (CLR)': pipe_none_clr,
-    'RCLR': pipe_rclr,
-    'RCLR + SKB': pipe_rclr_skb 
+    # 'None': pipe_none,
+    # 'SKB': pipe_skb,
+    # 'Aitchison': pipe_aitchison,
+    # 'None (CLR)': pipe_none_clr,
+    # 'RCLR': pipe_rclr,
+    # 'RCLR + SKB': pipe_rclr_skb,
+    'Consensus' : pipe_consensus
 }
 
 models = {
@@ -193,6 +200,25 @@ param_grids = {
             {'skb__k': [50, 100, 200], 'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
             {'skb__k': [50, 100, 200], 'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
         ]
+    },
+    'Consensus': {
+        'RF': {
+            'consensus__k': [100, 200, 300],
+            'classifier__n_estimators': [100, 300], 
+            'classifier__max_depth': [None, 10, 20]
+        },
+        'XGB': {
+            'consensus__k': [100, 200, 300], 
+            'classifier__n_estimators': [100, 300], 
+            'classifier__learning_rate': [0.01, 0.1], 
+            'classifier__max_depth': [3, 6],
+            'classifier__subsample': [0.8, 1.0],         
+            'classifier__colsample_bytree': [0.8, 1.0]   
+        },
+        'SVM': [
+            {'consensus__k': [100, 200, 300], 'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
+            {'consensus__k': [100, 200, 300], 'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+        ]
     }
 }
 
@@ -258,7 +284,5 @@ for scenario in tqdm(scenarios, desc="Scenari"):
                 colonne_ordinate = ['Scenario', 'Cutoff', 'Technique', 'Model', 'Test_MCC', 'Test_F1', 'Test_AUC', 'CV_MCC_Score', 'Best_Params']
                 df_results = df_results[colonne_ordinate]
 
-                df_results.to_csv("Fase2_Vincitori_GridSearch.csv", index=False)
+                df_results.to_csv("Fase2_Vincitori_GridSearch_Maggioranza.csv", index=False)
 
-
-print("\nCOMPLETATO! I campioni assoluti sono stati salvati in Fase2_Vincitori_GridSearch.csv")

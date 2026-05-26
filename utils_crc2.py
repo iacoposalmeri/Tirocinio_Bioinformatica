@@ -16,6 +16,12 @@ from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
+
+from collections import Counter
+
+from sklearn.base import BaseEstimator, TransformerMixin
+
 def trasformazione_rclr_nativa(X):
     '''
     Implementazione nativa della Robust CLR per evitare conflitti di dipendenze.
@@ -179,3 +185,76 @@ def crossvalidation (modello, X, y, cv, scoring):
     print(report_cv)
     return report_cv
     
+
+def voto_maggioranza_trasformazioni(X_tr_raw, X_tr_clr, X_tr_rclr, y_tr, k=100):
+    """
+    Trova i batteri di consenso selezionati dallo SKB attraverso 
+    tre diversi spazi composizionali (Raw, CLR, RCLR).
+    Ritorna solo l'intersezione stretta (chi prende >= 2 voti su 3).
+    """
+
+    skb_raw = SelectKBest(score_func=mutual_info_classif,k=min(k, X_tr_raw.shape[1]))
+    skb_raw.fit(X_tr_raw,y_tr)
+    voti_raw = list(skb_raw.get_feature_names_out())
+
+    skb_clr = SelectKBest(score_func=mutual_info_classif,k=min(k, X_tr_raw.shape[1]))
+    skb_clr.fit(X_tr_clr,y_tr)
+    voti_clr = list(skb_clr.get_feature_names_out())
+
+    skb_rclr = SelectKBest(score_func=mutual_info_classif,k=min(k, X_tr_raw.shape[1]))
+    skb_rclr.fit(X_tr_rclr,y_tr)
+    voti_rclr = list(skb_rclr.get_feature_names_out())
+
+    tutti_i_voti = voti_raw + voti_clr + voti_rclr
+    conteggio_voti = Counter(tutti_i_voti)
+
+    feature_vincitrici = [feat for feat, voti in conteggio_voti.items() if voti>=2]
+
+    if len(feature_vincitrici) == 0:
+        return voti_rclr
+        
+    return feature_vincitrici
+
+class ConsensusFilter(BaseEstimator, TransformerMixin):
+    def __init__(self, k=100, threshold=2):
+        self.k=k
+        self.threshold=threshold
+        self.selected_indices=None
+
+    def fit(self, X, y=None):
+        k_effettivo = min(X.shape[1],self.k)
+
+        skb_raw = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
+        skb_raw.fit(X, y)
+        voti_raw = list(skb_raw.get_support(indices=True))
+
+        # CLR
+        X_clr = trasformazione_clr(X) 
+        skb_clr = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
+        skb_clr.fit(X_clr, y)
+        voti_clr = list(skb_clr.get_support(indices=True))
+
+        # RCLR
+        X_rclr = trasformazione_rclr_nativa(X) 
+        skb_rclr = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
+        skb_rclr.fit(X_rclr, y)
+        voti_rclr = list(skb_rclr.get_support(indices=True))
+
+        tutti_i_voti = voti_raw + voti_clr + voti_rclr
+        conteggio = Counter(tutti_i_voti)
+
+        indici_vincitori = [indice for indice, voti in conteggio.items() if voti >= self.threshold]
+
+        if len(indici_vincitori) == 0:
+             self.selected_indices_ = voti_rclr
+        else:
+             self.selected_indices_ = indici_vincitori
+             
+        return self
+    
+    def transform(self, X, y=None):
+        X_rclr = trasformazione_rclr_nativa(X)
+        
+        if isinstance(X_rclr, pd.DataFrame):
+            return X_rclr.iloc[:, self.selected_indices_]
+        return X_rclr[:, self.selected_indices_]

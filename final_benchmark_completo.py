@@ -195,6 +195,18 @@ for scenario in tqdm(scenarios,desc="Scenarios:"):
             reps_train['Robust CLR + SKB'] = scaler_rclr_skb.fit_transform(X_tr_rclr_skb)
             reps_val['Robust CLR + SKB'] = scaler_rclr_skb.transform(X_val_rclr_skb)
             
+            # VOTAZIONE A MAGGIORANZA
+            batteri_consenso = voto_maggioranza_trasformazioni(
+                X_tr_filt, X_tr_clr_base, X_tr_rclr, y_tr, k=K_BEST_FEATURES
+            )
+            
+            X_tr_consensus = X_tr_rclr[batteri_consenso]
+            X_val_consensus = X_val_rclr[batteri_consenso]
+
+            scaler_consensus = StandardScaler()
+            reps_train['Consensus'] = scaler_consensus.fit_transform(X_tr_consensus)
+            reps_val['Consensus'] = scaler_consensus.transform(X_val_consensus)
+
             # CLASSIFICATION
 
             models = {
