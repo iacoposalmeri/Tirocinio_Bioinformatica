@@ -82,13 +82,20 @@ pipe_rclr_skb = Pipeline([
     ('classifier', None)
 ])
 
+pipe_consensus = Pipeline([
+    ('consensus', ConsensusFilter(threshold=3)),
+    ('scaler', StandardScaler()),
+    ('classifier', None)
+])
+
 pipelines = {
     'None': pipe_none,
     'SKB': pipe_skb,
-    'Aitchison': pipe_aitchison,
-    'None (CLR)': pipe_none_clr,
-    'RCLR': pipe_rclr,
-    'RCLR + SKB': pipe_rclr_skb 
+    # 'Aitchison': pipe_aitchison,
+    # 'None (CLR)': pipe_none_clr,
+    # 'RCLR': pipe_rclr,
+    # 'RCLR + SKB': pipe_rclr_skb,
+    #'Consensus' : pipe_consensus
 }
 
 models = {
@@ -101,101 +108,175 @@ param_grids = {
     'None': {
         'RF': {
             'classifier__n_estimators': [100, 300], 
-            'classifier__max_depth': [None, 10, 20]
+            'classifier__max_depth': [None, 10, 20],
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__min_samples_leaf': [1, 3, 5]
         },
         'XGB': {
             'classifier__n_estimators': [100, 300], 
             'classifier__learning_rate': [0.01, 0.1], 
             'classifier__max_depth': [3, 6],
             'classifier__subsample': [0.8, 1.0],         
-            'classifier__colsample_bytree': [0.8, 1.0]   
+            'classifier__colsample_bytree': [0.8, 1.0],
+            'classifier__min_child_weight': [1, 5, 10]
         },
         'SVM': [
-            {'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
-            {'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+            {
+                'classifier__kernel': ['rbf'], 
+                'classifier__C': [0.01, 0.1, 1, 10], 
+                'classifier__gamma': ['scale', 0.001, 0.01]
+            },
+            {
+                'classifier__kernel': ['linear'], 
+                'classifier__C': [0.01, 0.1, 1, 10]
+            }
         ]
     },
     'SKB': {
         'RF': {
-            'skb__k': [50, 100, 200], 
-            'classifier__n_estimators': [100, 300]
+            'skb__k': [20, 50, 100, 200], 
+            'classifier__n_estimators': [100, 300],
+            'classifier__max_depth': [None, 10],
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__min_samples_leaf': [1, 3]
         },
         'XGB': {
-            'skb__k': [50, 100, 200], 
+            'skb__k': [20, 50, 100, 200], 
             'classifier__n_estimators': [100, 300],
-            'classifier__subsample': [0.8, 1.0]
+            'classifier__learning_rate': [0.01, 0.1],
+            'classifier__max_depth': [3, 6],
+            'classifier__subsample': [0.8, 1.0],
+            'classifier__min_child_weight': [1, 5]
         },
         'SVM': [
-            {'skb__k': [50, 100, 200], 'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
-            {'skb__k': [50, 100, 200], 'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+            {
+                'skb__k': [20, 50, 100, 200], 
+                'classifier__kernel': ['rbf'], 
+                'classifier__C': [0.01, 0.1, 1, 10], 
+                'classifier__gamma': ['scale', 0.01]
+            },
+            {
+                'skb__k': [20, 50, 100, 200], 
+                'classifier__kernel': ['linear'], 
+                'classifier__C': [0.01, 0.1, 1, 10]
+            }
         ]
     },
     'Aitchison': {
         'RF': {
-            'pca__n_components': [15, 30, 0.90], 
-            'classifier__n_estimators': [100, 300]
+            'pca__n_components': [15, 30, 50, 70, 0.90], 
+            'classifier__n_estimators': [100, 300],
+            'classifier__max_depth': [None, 10],
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__min_samples_leaf': [1, 3]
         },
         'XGB': {
-            'pca__n_components': [15, 30, 0.90], 
+            'pca__n_components': [15, 30, 50, 70, 0.90], 
             'classifier__n_estimators': [100, 300],
-            'classifier__subsample': [0.8, 1.0]
+            'classifier__learning_rate': [0.01, 0.1],
+            'classifier__max_depth': [3, 6],
+            'classifier__subsample': [0.8, 1.0],
+            'classifier__min_child_weight': [1, 5]
         },
         'SVM': [
-            {'pca__n_components': [15, 30, 0.90], 'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale']},
-            {'pca__n_components': [15, 30, 0.90], 'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+            {
+                'pca__n_components': [15, 30, 50, 70, 0.90], 
+                'classifier__kernel': ['rbf'], 
+                'classifier__C': [0.01, 0.1, 1, 10], 
+                'classifier__gamma': ['scale', 0.01]
+            },
+            {
+                'pca__n_components': [15, 30, 50, 70, 0.90], 
+                'classifier__kernel': ['linear'], 
+                'classifier__C': [0.01, 0.1, 1, 10]
+            }
         ]
     },
-    'None (CLR)': {
+    'CLR': {
         'RF': {
             'classifier__n_estimators': [100, 300], 
-            'classifier__max_depth': [None, 10, 20]
+            'classifier__max_depth': [None, 10, 20],
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__min_samples_leaf': [1, 3, 5]
         },
         'XGB': {
             'classifier__n_estimators': [100, 300], 
             'classifier__learning_rate': [0.01, 0.1], 
             'classifier__max_depth': [3, 6],
             'classifier__subsample': [0.8, 1.0],         
-            'classifier__colsample_bytree': [0.8, 1.0]   
+            'classifier__colsample_bytree': [0.8, 1.0],
+            'classifier__min_child_weight': [1, 5, 10]
         },
         'SVM': [
-            {'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
-            {'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+            {
+                'classifier__kernel': ['rbf'], 
+                'classifier__C': [0.01, 0.1, 1, 10], 
+                'classifier__gamma': ['scale', 0.001, 0.01]
+            },
+            {
+                'classifier__kernel': ['linear'], 
+                'classifier__C': [0.01, 0.1, 1, 10]
+            }
         ]
     },
     'RCLR': {
         'RF': {
             'classifier__n_estimators': [100, 300], 
-            'classifier__max_depth': [None, 10, 20]
+            'classifier__max_depth': [None, 10, 20],
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__min_samples_leaf': [1, 3, 5]
         },
         'XGB': {
             'classifier__n_estimators': [100, 300], 
             'classifier__learning_rate': [0.01, 0.1], 
             'classifier__max_depth': [3, 6],
             'classifier__subsample': [0.8, 1.0],         
-            'classifier__colsample_bytree': [0.8, 1.0]   
+            'classifier__colsample_bytree': [0.8, 1.0],
+            'classifier__min_child_weight': [1, 5, 10]
         },
         'SVM': [
-            {'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
-            {'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+            {
+                'classifier__kernel': ['rbf'], 
+                'classifier__C': [0.01, 0.1, 1, 10], 
+                'classifier__gamma': ['scale', 0.001, 0.01]
+            },
+            {
+                'classifier__kernel': ['linear'], 
+                'classifier__C': [0.01, 0.1, 1, 10]
+            }
         ]
     },
-    'RCLR + SKB': {
+    'SKB_RCLR': {
         'RF': {
-            'skb__k': [50, 100, 200], 
-            'classifier__n_estimators': [100, 300]
+            'skb__k': [20, 50, 100, 200], 
+            'classifier__n_estimators': [100, 300],
+            'classifier__max_depth': [None, 10],
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__min_samples_leaf': [1, 3]
         },
         'XGB': {
-            'skb__k': [50, 100, 200], 
+            'skb__k': [20, 50, 100, 200], 
             'classifier__n_estimators': [100, 300],
-            'classifier__subsample': [0.8, 1.0]
+            'classifier__learning_rate': [0.01, 0.1],
+            'classifier__max_depth': [3, 6],
+            'classifier__subsample': [0.8, 1.0],
+            'classifier__min_child_weight': [1, 5]
         },
         'SVM': [
-            {'skb__k': [50, 100, 200], 'classifier__kernel': ['rbf'], 'classifier__C': [0.1, 1, 10], 'classifier__gamma': ['scale', 'auto']},
-            {'skb__k': [50, 100, 200], 'classifier__kernel': ['linear'], 'classifier__C': [0.1, 1, 10]}
+            {
+                'skb__k': [20, 50, 100, 200], 
+                'classifier__kernel': ['rbf'], 
+                'classifier__C': [0.01, 0.1, 1, 10], 
+                'classifier__gamma': ['scale', 0.01]
+            },
+            {
+                'skb__k': [20, 50, 100, 200], 
+                'classifier__kernel': ['linear'], 
+                'classifier__C': [0.01, 0.1, 1, 10]
+            }
         ]
     }
 }
-
 results = []
 
 for scenario in tqdm(scenarios, desc="Scenari"):
@@ -251,14 +332,12 @@ for scenario in tqdm(scenarios, desc="Scenari"):
                     'Test_AUC': roc_auc_score(y_test_full, y_proba)
                 })
 
-                df_results = pd.DataFrame(results)
+df_results = pd.DataFrame(results)
 
-                df_results = df_results.sort_values(by=['Scenario', 'Test_MCC'], ascending=[True, False])
+df_results = df_results.sort_values(by=['Scenario', 'Test_MCC'], ascending=[True, False])
 
-                colonne_ordinate = ['Scenario', 'Cutoff', 'Technique', 'Model', 'Test_MCC', 'Test_F1', 'Test_AUC', 'CV_MCC_Score', 'Best_Params']
-                df_results = df_results[colonne_ordinate]
+colonne_ordinate = ['Scenario', 'Cutoff', 'Technique', 'Model', 'Test_MCC', 'Test_F1', 'Test_AUC', 'CV_MCC_Score', 'Best_Params']
+df_results = df_results[colonne_ordinate]
 
-                df_results.to_csv("Fase2_Vincitori_GridSearch.csv", index=False)
+df_results.to_csv("GridSearch_finaletotale.csv", index=False)
 
-
-print("\nCOMPLETATO! I campioni assoluti sono stati salvati in Fase2_Vincitori_GridSearch.csv")
