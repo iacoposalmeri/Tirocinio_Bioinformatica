@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
 from skbio.stats.composition import clr, multiplicative_replacement as multi_replace
@@ -16,7 +17,7 @@ from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 
-from sklearn.feature_selection import SelectKBest, mutual_info_classif
+from sklearn.feature_selection import RFE, SelectFromModel, SelectKBest, mutual_info_classif
 
 from collections import Counter
 
@@ -224,29 +225,38 @@ class ConsensusFilter(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         k_effettivo = min(X.shape[1],self.k)
 
-        skb_raw = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
-        skb_raw.fit(X, y)
-        voti_raw = list(skb_raw.get_support(indices=True))
+        X_rclr = trasformazione_rclr_nativa(X)
 
-        # CLR
-        X_clr = trasformazione_clr(X) 
-        skb_clr = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
-        skb_clr.fit(X_clr, y)
-        voti_clr = list(skb_clr.get_support(indices=True))
+        # SKB
+        skb = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
+        skb.fit(X_rclr, y)
+        voti_skb = list(skb.get_support(indices=True))
 
-        # RCLR
-        X_rclr = trasformazione_rclr_nativa(X) 
-        skb_rclr = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
-        skb_rclr.fit(X_rclr, y)
-        voti_rclr = list(skb_rclr.get_support(indices=True))
+        # RFE
+        stimatore_rfe = RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
+        rfe = RFE(estimator=stimatore_rfe, n_features_to_select=k_effettivo, step=0.1)
+        rfe.fit(X_rclr, y)
+        voti_rfe = list(rfe.get_support(indices=True))
 
-        tutti_i_voti = voti_raw + voti_clr + voti_rclr
+        # Elastic NET
+        modello_en = LogisticRegression(
+            penalty='elasticnet', 
+            solver='saga', 
+            l1_ratio=0.5, # 50% Lasso, 50% Ridge
+            random_state=42,
+            max_iter=1000
+        )
+        selettore_en = SelectFromModel(modello_en, max_features=k_effettivo, prefit=False)
+        selettore_en.fit(X_rclr, y)
+        voti_elan = list(selettore_en.get_support(indices=True))
+
+        tutti_i_voti = voti_skb + voti_rfe + voti_elan
         conteggio = Counter(tutti_i_voti)
 
         indici_vincitori = [indice for indice, voti in conteggio.items() if voti >= self.threshold]
 
         if len(indici_vincitori) == 0:
-             self.selected_indices_ = voti_rclr
+             self.selected_indices_ = voti_skb
         else:
              self.selected_indices_ = indici_vincitori
              
@@ -257,4 +267,10 @@ class ConsensusFilter(BaseEstimator, TransformerMixin):
         
         if isinstance(X_rclr, pd.DataFrame):
             return X_rclr.iloc[:, self.selected_indices_]
-        return X_rclr[:, self.selected_indices_]
+        
+        sliced_array = X_rclr[:, self.selected_indices_]
+        
+        if isinstance(X, pd.DataFrame):
+            return pd.DataFrame(sliced_array, index=X.index, columns=X.columns[self.selected_indices_])
+        
+        return sliced_array

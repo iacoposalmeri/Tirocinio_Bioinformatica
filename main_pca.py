@@ -17,13 +17,13 @@ risultati_cv = {"cutoff": [], "varianza_pca": [],  "n_componenti": [], "Modello"
 
 for cutoff in cutoffs:
         batteri_da_tenere = maschera_prevalenza(X_train, y_train, cutoff)
-        X_train_clr = trasformazione_clr(X_train)
-        X_test_clr = trasformazione_clr(X_test)
+        
         print(f"Prima del filtraggio al {cutoff*100:.0f}%: {X_train_clr.shape}")
         X_train_filtrato = filtraggio(X_train_clr, batteri_da_tenere)
         X_test_filtrato = filtraggio(X_test_clr, batteri_da_tenere)
+        X_train_clr = trasformazione_clr(X_train)
+        X_test_clr = trasformazione_clr(X_test)
         X_train_scaled, X_test_scaled = standard_scaler(X_train_filtrato, X_test_filtrato)
-
 
         for varianza in varianze_pca:
                         X_train_pca_scaled, X_test_pca_scaled, pca_fitted_scaled = pca_classica(X_train_scaled, X_test_scaled, n_components=varianza)

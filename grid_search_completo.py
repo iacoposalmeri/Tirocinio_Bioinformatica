@@ -41,6 +41,7 @@ scenarios = ['healthy']
 cutoffs = [0.03, 0.05, 0.07, 0.1, 0.15, 0.2]
 
 mcc_scorer = make_scorer(matthews_corrcoef)
+f1_scorer = make_scorer(f1_score)
 
 pipe_none = Pipeline([
     ('scaler',StandardScaler()),
@@ -89,12 +90,12 @@ pipe_consensus = Pipeline([
 ])
 
 pipelines = {
-    'None': pipe_none,
-    'SKB': pipe_skb,
-    # 'Aitchison': pipe_aitchison,
-    # 'None (CLR)': pipe_none_clr,
-    # 'RCLR': pipe_rclr,
-    # 'RCLR + SKB': pipe_rclr_skb,
+    #'None': pipe_none,
+    #'SKB': pipe_skb,
+     'Aitchison': pipe_aitchison,
+     'CLR': pipe_none_clr,
+     'RCLR': pipe_rclr,
+     'SKB_RCLR': pipe_rclr_skb,
     #'Consensus' : pipe_consensus
 }
 
@@ -308,7 +309,7 @@ for scenario in tqdm(scenarios, desc="Scenari"):
                     pipeline, 
                     grid, 
                     cv=cv_inner, 
-                    scoring=mcc_scorer, 
+                    scoring=f1_scorer, 
                     refit=True,
                     n_jobs=-1,
                     verbose=1
@@ -339,5 +340,5 @@ df_results = df_results.sort_values(by=['Scenario', 'Test_MCC'], ascending=[True
 colonne_ordinate = ['Scenario', 'Cutoff', 'Technique', 'Model', 'Test_MCC', 'Test_F1', 'Test_AUC', 'CV_MCC_Score', 'Best_Params']
 df_results = df_results[colonne_ordinate]
 
-df_results.to_csv("GridSearch_finaletotale.csv", index=False)
+df_results.to_csv("GridSearch_finale_mcc.csv", index=False)
 
