@@ -3,7 +3,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
-from skbio.stats.composition import clr, multiplicative_replacement as multi_replace
+from skbio.stats.composition import clr
+from skbio.stats.composition import multi_replace
+
 
 import numpy as np
 
