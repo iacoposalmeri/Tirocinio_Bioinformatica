@@ -59,6 +59,62 @@ mappa_feature_post_cutoff = {
     0.20: 174
 }
 
+tqdm.pandas(desc="Simulazione Consensus in corso")
+
+def calcola_feature_reali(row):
+    tecnica = str(row['Technique'])
+    
+    try:
+        params = ast.literal_eval(row['Best_Params'])
+    except:
+        params = {}
+
+    if 'Consensus' not in tecnica:
+        if 'rfe__n_features_to_select' in params: return params['rfe__n_features_to_select']
+        if 'skb__k' in params: return params['skb__k']
+        if 'elasticnet__max_features' in params: return params['elasticnet__max_features']
+        # Fallback se non c'è Feature Selection (es. Baseline)
+        c = float(row['Cutoff'])
+        return mappa_feature_post_cutoff.get(c, None)
+
+    cutoff = float(row['Cutoff'])
+    k_richiesto = params.get('consensus__k', 50)
+    threshold = params.get('consensus__threshold', 2)
+    
+    prevalenza = (X_train_full > 0).mean()
+    batteri_validi = prevalenza[prevalenza >= cutoff].index
+    X_train_filt = X_train_full[batteri_validi]
+    
+    if 'RCLR' in tecnica:
+        X_train_trasf = trasformazione_rclr_nativa(X_train_filt)
+    else:
+        X_train_trasf = trasformazione_clr(X_train_filt)
+        
+    k_effettivo = min(X_train_trasf.shape[1], k_richiesto)
+    
+    skb = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
+    skb.fit(X_train_trasf, y_train_full)
+    voti_skb = list(skb.get_support(indices=True))
+    
+    stimatore_rfe = RandomForestClassifier(n_estimators=50, random_state=SEED, n_jobs=-1)
+    rfe = RFE(estimator=stimatore_rfe, n_features_to_select=k_effettivo, step=0.1)
+    rfe.fit(X_train_trasf, y_train_full)
+    voti_rfe = list(rfe.get_support(indices=True))
+    
+    modello_en = LogisticRegression(penalty='elasticnet', solver='saga', l1_ratio=0.5, random_state=SEED, max_iter=1000)
+    selettore_en = SelectFromModel(modello_en, max_features=k_effettivo, prefit=False)
+    selettore_en.fit(X_train_trasf, y_train_full)
+    voti_elan = list(selettore_en.get_support(indices=True))
+    
+    tutti_i_voti = voti_skb + voti_rfe + voti_elan
+    conteggio = Counter(tutti_i_voti)
+    indici_vincitori = [indice for indice, voti in conteggio.items() if voti >= threshold]
+    
+    if len(indici_vincitori) == 0:
+        return len(voti_skb)
+    else:
+        return len(indici_vincitori)
+
 def estrai_k(row):
     try:
         params = ast.literal_eval(row['Best_Params'])
@@ -75,7 +131,7 @@ def estrai_k(row):
         
     return None
 
-df_grid['N_Features'] = df_grid.apply(estrai_k, axis=1)
+df_grid['N_Features'] = df_grid.progress_apply(calcola_feature_reali, axis=1)
 
 print("Creazione del Trade-Off Plot")
 

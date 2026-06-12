@@ -98,11 +98,12 @@ for index, row in prime_5_righe.iterrows():
         else:
             feature_finali = list(maggioranza)
             
-        print(f"  -> Trovati da SKB: {len(voti_skb)}")
-        print(f"  -> Trovati da RFE: {len(voti_rfe)}")
-        print(f"  -> Trovati da E-Net: {len(voti_elan)}")
-        print(f"  -> INTERSEZIONE (Unanimità 3/3): {len(intersezione)}")
-        print(f"  -> MAGGIORANZA (>= {threshold} voti): {len(maggioranza)}")
+        # print(f"  -> Trovati da SKB: {len(voti_skb)}")
+        # print(f"  -> Trovati da RFE: {len(voti_rfe)}")
+        # print(f"  -> Trovati da E-Net: {len(voti_elan)}")
+        # print(f"  -> INTERSEZIONE: {len(intersezione)}")
+        # print(f"  -> UNIONE: {len(unione)}")
+        # print(f"  -> MAGGIORANZA (>= {threshold} voti): {len(maggioranza)}")
         
         dizionario_biomarcatori[nome_esperimento] = feature_finali
         
@@ -149,4 +150,4 @@ df_biomarcatori = pd.DataFrame(dizionario_biomarcatori)
 df_biomarcatori.to_csv("Top5_Biomarcatori_Estratti.csv", index=False)
 
 print(f"\n{'='*60}")
-print("FINITO! Tutti i biomarcatori sono stati estratti e salvati in 'Top5_Biomarcatori_Estratti.csv'")
+print("Tutti i biomarcatori sono stati estratti e salvati in 'Top5_Biomarcatori_Estratti.csv'")
