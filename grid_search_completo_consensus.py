@@ -45,22 +45,19 @@ mcc_scorer = make_scorer(matthews_corrcoef)
 clr_transformer = FunctionTransformer(trasformazione_clr)
 
 
-pipe_clr_skb = Pipeline([
-    ('clr',clr_transformer),
+pipe_skb = Pipeline([
     ('skb', SelectKBest(score_func=mutual_info_classif).set_output(transform="pandas")),
     ('scaler',StandardScaler()),
     ('classifier', None)
 ])
 
-pipe_clr_rfe = Pipeline([
-    ('clr',clr_transformer),
-    ('rfe', RFE(estimator=RandomForestClassifier(n_estimators=50, random_state=SEED, n_jobs=-1), step=0.1)),
+pipe_rfe = Pipeline([
+    ('rfe', RFE(estimator=RandomForestClassifier(n_estimators=50, random_state=SEED), step=0.1)),
     ('scaler',StandardScaler()),
     ('classifier', None)
 ])
 
-pipe_clr_elasticnet = Pipeline([
-    ('clr',clr_transformer),
+pipe_elasticnet = Pipeline([
     ('elasticnet', SelectFromModel(
         LogisticRegression(penalty='elasticnet', solver='saga', l1_ratio=0.5, random_state=SEED, max_iter=1000)
     )),
@@ -75,15 +72,15 @@ pipe_consensus = Pipeline([
 ])
 
 pipelines = {
-    'CLR_SKB': pipe_clr_skb,
-    'CLR_RFE': pipe_clr_rfe,
-    'CLR_ElasticNet': pipe_clr_elasticnet,
-    'Consensus' : pipe_consensus
+    'CLR_SKB': pipe_skb,
+    'CLR_RFE': pipe_rfe,
+    'CLR_ElasticNet': pipe_elasticnet,
+    'CLR_Consensus' : pipe_consensus
 }
 
 models = {
-    'RF': RandomForestClassifier(random_state=SEED),
-    'XGB': XGBClassifier(random_state=SEED, tree_method='hist')
+    'RF': RandomForestClassifier(random_state=SEED, n_jobs=1),
+    'XGB': XGBClassifier(random_state=SEED, tree_method='hist', n_jobs=1)
 }
 
 param_grids = {
@@ -138,7 +135,7 @@ param_grids = {
             'classifier__min_child_weight': [1, 5]
         }
     },
-    'Consensus': {
+    'CLR_Consensus' : {
         'RF': {
             'consensus__k': [50, 100, 200, 300], 
             'consensus__threshold': [1, 2, 3],
@@ -173,13 +170,17 @@ if __name__ == '__main__':
             bacteria_to_keep = maschera_prevalenza(X_train_full, y_train_full, cutoff=cutoff)
             X_train_filt = filtraggio(X_train_full, bacteria_to_keep)
             X_test_filt = filtraggio(X_test_full, bacteria_to_keep)
-            
+
+          
             mask_validi = (X_train_filt != 0).any(axis=1)
             X_train_filt = X_train_filt[mask_validi]
             y_train = y_train_full[mask_validi]
             
             X_test_filt = X_test_filt[X_train_filt.columns]
-
+            
+            X_train_filt = trasformazione_clr(X_train_filt)
+            X_test_filt = trasformazione_clr(X_test_filt)
+            
             cv_inner = StratifiedKFold(n_splits=10, shuffle=True, random_state=SEED)
 
             for pipe_name, pipeline in pipelines.items():

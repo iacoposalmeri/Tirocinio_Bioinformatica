@@ -108,91 +108,111 @@ plt.show()
 
 
 
-
 import pandas as pd
 import ast
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# 1. Carica i dati
+# 1. Mappa esatta delle feature dopo il filtro prevalenza (dai tuoi dati)
+MAPPA_PREVALENZA = {
+    0.03: 383,
+    0.05: 318,
+    0.07: 272,
+    0.1: 234,
+    0.15: 201,
+    0.2: 171
+}
+
+# 2. Caricamento Dati
 df = pd.read_csv('Gridsearch_finale.csv')
+# Separiamo la colonna Technique in Trasformazione e Metodo (es. 'CLR_RFE' -> 'CLR' e 'RFE')
 df[['Transformation', 'FS_Method']] = df['Technique'].str.split('_', expand=True)
+# Gestione del 'Consensus' che non ha l'underscore iniziale nel tuo CSV
+df.loc[df['Technique'] == 'Consensus', 'FS_Method'] = 'Consensus'
+df.loc[df['Technique'] == 'Consensus', 'Transformation'] = 'Nessuna (Consensus)'
 
 # ---------------------------------------------------------
-# 2. SCEGLI LA COMBINAZIONE ESATTA CHE VUOI GRAFICARE!
+# 3. SCEGLI LA TUA PIPELINE SPECIFICA DA PLOTTARE
 # ---------------------------------------------------------
-MIGLIOR_MODELLO = 'XGB'         # Scegli tra 'RF' o 'XGB'
-MIGLIORE_TRASFORMAZIONE = 'CLR' # Scegli tra 'CLR' o 'RCLR'
-MIGLIOR_CUTOFF = 0.05           # Scegli il cutoff (es. 0.03, 0.07, ecc.)
+MIGLIOR_MODELLO = 'XGB'           # Es. 'RF' o 'XGB'
+MIGLIORE_TRASFORMAZIONE = 'CLR'  # Es. 'CLR' o 'RCLR'
+MIGLIOR_FS = 'SKB'               # Es. 'SKB', 'RFE', 'ElasticNet' o 'Consensus'
+MIGLIOR_CUTOFF = 0.05        # Scegli il cutoff
 
-# Filtriamo il dataset usando le tue scelte
+# Filtriamo per estrarre l'UNICA riga corrispondente alla tua scelta
 df_best = df[(df['Model'] == MIGLIOR_MODELLO) & 
              (df['Transformation'] == MIGLIORE_TRASFORMAZIONE) & 
-             (df['Cutoff'] == MIGLIOR_CUTOFF)].copy()
+             (df['FS_Method'] == MIGLIOR_FS) & 
+             (df['Cutoff'] == MIGLIOR_CUTOFF)]
 
-# 3. Funzione per estrarre il numero di feature (rimasta identica)
-def estrai_num_feature(riga):
+if df_best.empty:
+    print("Attenzione: Combinazione non trovata nel CSV! Controlla i nomi.")
+else:
+    # 4. Estrazione del numero finale di feature (Biomarcatori)
+    riga = df_best.iloc[0]
     params = ast.literal_eval(riga['Best_Params'])
     metodo = riga['FS_Method']
     
     if metodo == 'SKB':
-        return params.get('skb__k', 0)
+        num_final_features = params.get('skb__k', 0)
     elif metodo == 'RFE':
-        return params.get('rfe__n_features_to_select', 0)
+        num_final_features = params.get('rfe__n_features_to_select', 0)
     elif metodo == 'ElasticNet':
-        return params.get('elasticnet__max_features', 0)
+        num_final_features = params.get('elasticnet__max_features', 0)
     elif metodo == 'Consensus':
-        return params.get('consensus__k', 0)
-    return 0
+        num_final_features = params.get('consensus__k', 0)
+    else:
+        num_final_features = 0
 
-df_best['Num_Features'] = df_best.apply(estrai_num_feature, axis=1)
+    # Ricaviamo il numero intermedio dalla nostra mappa automatica
+    num_intermedio = MAPPA_PREVALENZA.get(MIGLIOR_CUTOFF, 934)
 
-# Assicuriamoci che i dati siano ordinati per metodo per pulizia visiva
-df_best = df_best.sort_values(by='FS_Method')
+    # 5. Costruzione del Dataset per le 3 barre perfette
+    dati_plot = {
+        'Fase della Pipeline': [
+            '1. Dati Grezzi\n(100% Taxa)', 
+            f'2. Filtro Prevalenza\n(Cutoff {MIGLIOR_CUTOFF})', 
+            f'3. Feature Selection\n({MIGLIOR_FS})'
+        ],
+        'Numero Feature': [934, num_intermedio, num_final_features],
+        'Categoria': ['Baseline', 'Baseline', 'Biomarcatori']
+    }
+    df_plot = pd.DataFrame(dati_plot)
 
-# 4. Creiamo i dati per il grafico
-# Ho inserito 383 come numero di feature del Cutoff 0.03 (letto dal tuo file differenze_cutoff.csv)
-dati_plot = {
-    'Fase / Tecnica': ['1. Dati Grezzi', '2. Filtro Prevalenza'] + df_best['FS_Method'].tolist(),
-    'Numero Feature': [934, 383] + df_best['Num_Features'].tolist(),
-    'Categoria': ['Baseline', 'Baseline'] + ['Feature Selection'] * len(df_best)
-}
-df_plot = pd.DataFrame(dati_plot)
+    # 6. Creazione del Grafico a Imbuto
+    plt.figure(figsize=(10, 6))
 
-# 5. Creazione del Grafico
-plt.figure(figsize=(12, 7))
+    ax = sns.barplot(
+        data=df_plot, 
+        x='Fase della Pipeline', 
+        y='Numero Feature',
+        hue='Categoria',
+        palette={'Baseline': '#bdc3c7', 'Biomarcatori': '#e74c3c'}, # Grigio per i passaggi, Rosso per il target finale
+        edgecolor='black',
+        dodge=False
+    )
 
-ax = sns.barplot(
-    data=df_plot, 
-    x='Fase / Tecnica', 
-    y='Numero Feature',
-    hue='Categoria',
-    palette={'Baseline': '#bdc3c7', 'Feature Selection': '#3498db'},
-    edgecolor='black',
-    dodge=False
-)
+    # Aggiunge i numeri esatti sopra le barre
+    for p in ax.patches:
+        altezza = p.get_height()
+        if altezza > 0: 
+            ax.annotate(f'{int(altezza)}', 
+                        (p.get_x() + p.get_width() / 2., altezza), 
+                        ha='center', va='center', 
+                        fontsize=13, fontweight='bold', color='black', 
+                        xytext=(0, 10), textcoords='offset points')
 
-# Aggiunge i numeri sopra le barre
-for p in ax.patches:
-    if p.get_height() > 0: # Evita di mettere lo 0 se la barra è vuota
-        ax.annotate(f'{int(p.get_height())}', 
-                    (p.get_x() + p.get_width() / 2., p.get_height()), 
-                    ha='center', va='center', 
-                    fontsize=12, fontweight='bold', color='black', 
-                    xytext=(0, 10), textcoords='offset points')
+    plt.title(f'Riduzione della Dimensionalità: Pipeline {MIGLIOR_MODELLO} + {MIGLIORE_TRASFORMAZIONE} + {MIGLIOR_FS}', 
+              fontsize=15, fontweight='bold', pad=20)
+    plt.ylabel('Numero di Specie Batteriche', fontsize=12)
+    plt.xlabel('') # Tolto perché i nomi delle fasi sono già chiari
+    plt.legend(title='', loc='upper right')
 
-plt.title(f'Feature Selection ({MIGLIOR_MODELLO} + {MIGLIORE_TRASFORMAZIONE} | Cutoff: {MIGLIOR_CUTOFF})', 
-          fontsize=16, fontweight='bold', pad=15)
-plt.ylabel('Numero di Specie Batteriche', fontsize=12)
-plt.xlabel('Fase della Pipeline / Algoritmo', fontsize=12)
-plt.legend(title='', loc='upper right')
+    # Opzionale: Salvataggio
+    # plt.savefig(f'Imbuto_Feature_{MIGLIOR_MODELLO}_{MIGLIOR_FS}.png', dpi=300, bbox_inches='tight')
 
-# plt.savefig(f'riduzione_feature_{MIGLIOR_MODELLO}_{MIGLIORE_TRASFORMAZIONE}_{MIGLIOR_CUTOFF}.png', dpi=300)
-
-plt.tight_layout()
-plt.show()
-
-
+    plt.tight_layout()
+    plt.show()
 
 
 

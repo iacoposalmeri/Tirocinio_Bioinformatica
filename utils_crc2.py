@@ -141,7 +141,7 @@ def trasformazione_clr(X):
         X_check = X_check.replace(0, 1e-9)
     # Applichiamo la trasformazione CLR ai dati filtrati
     # La funzione multi_replace sostituisce i valori zero con un piccolo valore positivo per evitare problemi con la trasformazione CLR
-    X_nozeri = multi_replace(X)
+    X_nozeri = multi_replace(X_check)
     X_clr_array = clr(X_nozeri)
     # Creiamo un DataFrame per i dati trasformati, mantenendo gli stessi indici e colonne del DataFrame originale
     X_clr = pd.DataFrame(X_clr_array, index=X.index, columns=X.columns)
@@ -227,17 +227,16 @@ class ConsensusFilter(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         k_effettivo = min(X.shape[1],self.k)
 
-        X_rclr = trasformazione_rclr_nativa(X)
 
         # SKB
         skb = SelectKBest(score_func=mutual_info_classif, k=k_effettivo)
-        skb.fit(X_rclr, y)
+        skb.fit(X, y)
         voti_skb = list(skb.get_support(indices=True))
 
         # RFE
-        stimatore_rfe = RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
+        stimatore_rfe = RandomForestClassifier(n_estimators=50, random_state=42)
         rfe = RFE(estimator=stimatore_rfe, n_features_to_select=k_effettivo, step=0.1)
-        rfe.fit(X_rclr, y)
+        rfe.fit(X, y)
         voti_rfe = list(rfe.get_support(indices=True))
 
         # Elastic NET
@@ -249,7 +248,7 @@ class ConsensusFilter(BaseEstimator, TransformerMixin):
             max_iter=1000
         )
         selettore_en = SelectFromModel(modello_en, max_features=k_effettivo, prefit=False)
-        selettore_en.fit(X_rclr, y)
+        selettore_en.fit(X, y)
         voti_elan = list(selettore_en.get_support(indices=True))
 
         tutti_i_voti = voti_skb + voti_rfe + voti_elan
@@ -265,14 +264,15 @@ class ConsensusFilter(BaseEstimator, TransformerMixin):
         return self
     
     def transform(self, X, y=None):
-        X_rclr = trasformazione_rclr_nativa(X)
         
-        if isinstance(X_rclr, pd.DataFrame):
-            return X_rclr.iloc[:, self.selected_indices_]
+        if isinstance(X, pd.DataFrame):
+            return X.iloc[:, self.selected_indices_]
         
-        sliced_array = X_rclr[:, self.selected_indices_]
+        sliced_array = X[:, self.selected_indices_]
         
         if isinstance(X, pd.DataFrame):
             return pd.DataFrame(sliced_array, index=X.index, columns=X.columns[self.selected_indices_])
         
         return sliced_array
+
+
